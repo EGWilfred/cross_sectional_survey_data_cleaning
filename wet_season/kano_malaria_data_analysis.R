@@ -26,11 +26,16 @@ Kano_data_hh_individuals_cleaned <- Kano_data_hh_individuals %>%
 
 
 
-malaria_individual_answers_duplicates <- Kano_data_hh_individuals_cleaned %>% 
-  # duplicates in Kano_data_hh_individuals_cleaned talk to eniola about this 
-  group_by(serial_number, line_number01, unique_id) %>%
-  filter(n() > 1) %>%
-  ungroup() 
+# malaria_individual_answers_duplicates <- Kano_data_hh_individuals_cleaned %>% 
+#   # duplicates in Kano_data_hh_individuals_cleaned talk to eniola about this 
+#   group_by(serial_number, line_number01, unique_id) %>%
+#   filter(n() > 1) %>%
+#   ungroup() 
+# 
+# write_dta(malaria_individual_answers_duplicates,
+#           file.path(cleaned_data, metropolis_name,
+#                     "duplicated_data",
+#                     "kano_individuals_duplicates.csv"))
   
 
 
@@ -42,9 +47,98 @@ Kano_data_malaria_screening_cleaned <- Kano_data_malaria_screening %>%
          unique_id = paste0(serial_number, "_", line_number02))
 
 
-malaria_malaria_screen_duplicates <- Kano_data_malaria_screening_cleaned %>% 
-  # duplicates in Kano_data_hh_individuals_cleaned talk to eniola about this 
-  group_by(serial_number, line_number02, dbs_code, unique_id) %>%
-  filter(n() > 1) %>%
-  ungroup() 
+# malaria_malaria_screen_duplicates <- Kano_data_malaria_screening_cleaned %>% 
+#   # duplicates in Kano_data_hh_individuals_cleaned talk to eniola about this 
+#   group_by(serial_number, line_number02, dbs_code, unique_id) %>%
+#   filter(n() > 1) %>%
+#   ungroup()
+# 
+# write.csv(malaria_malaria_screen_duplicates,
+#           file.path(cleaned_data, metropolis_name,
+#                     "duplicated_data",
+#                     "kano_malaria_malaria_duplicated.csv"))
 
+
+kano_all_data <-  inner_join(Kano_data_hh_individuals_cleaned, 
+                        Kano_data_malaria_screening_cleaned, 
+                        by = join_by("serial_number",
+                                     "repeat_instance", 
+                                     "unique_id"))
+
+
+# kano_all_data_duplicates <- kano_all_data %>%
+#   # duplicates in Kano_data_hh_individuals_cleaned talk to eniola about this
+#   group_by(serial_number, line_number02, dbs_code, unique_id) %>%
+#   filter(n() > 1) %>%
+#   ungroup()
+# 
+# write.csv(kano_all_data_duplicates,
+#           file.path(cleaned_data, metropolis_name,
+#                     "duplicated_data",
+#                     "kano_alldata_duplicated.csv"))
+
+
+##########################################################################################################
+# ANALYSIS
+##########################################################################################################
+
+newdata <- kano_all_data %>% 
+  mutate(agebin = cut(age, c(0,5,10,15,20,30,40,50, 60, 70, 122), include.lowest = T))
+
+ggplot(newdata, aes(x = agebin, fill = as.factor(gender)))+
+  geom_bar() +
+  theme_minimal() +
+  scale_fill_manual(values = c("1" = "#FFE7E7", "2" = "#944E63"), 
+                        labels = c("males", "females"))+
+  labs(title = "Kano age sex distribution", 
+       x = "age group", y = "Frequency", fill = "gender")
+  
+
+newdata %>% 
+  # filter() %>% 
+  ggplot(aes(x = agebin, fill = as.factor(settlement_type)))+
+  geom_bar() +
+  theme_minimal() +
+  scale_fill_manual(values = c("1" = "#FFE7E7", "2" = "#B47B84", "3" = "#944E63"), 
+                    labels = c("formal", "informal","slums"))+
+  labs(title = "Kano age distribution by settlement type", 
+       x = "age group", y = "Frequency", fill = "settlement type")
+
+
+newdata %>% 
+  filter(!is.na(ward)) %>% 
+  ggplot(aes(x = agebin, fill = as.factor(settlement_type)))+
+  geom_bar() +
+  facet_wrap(~ward,  labeller = labeller(ward = c("1" = "Zango", "2" = "Dorayi", "3" = "Tundun Wazurchi", 
+                                                  "4" = "Fagge 2", "5" = "Gobirawa", "6" = "Others")))+
+  theme_minimal() +
+  scale_fill_manual(values = c("1" = "#FFE7E7", "2" = "#B47B84", "3" = "#944E63"), 
+                    labels = c("formal", "informal","slums"))+
+  labs(title = "Kano age distribution by settlement type", 
+       x = "age group", y = "Frequency", fill = "settlement type")
+
+
+
+newdata$ward <- factor(newdata$ward, levels = c("1", "2", "3", "4", "5", "6"))
+
+
+newdata %>% 
+  filter(!is.na(settlement_type),!is.na(rdt_test_result), 
+         !is.na(ward), ward != "3") %>% 
+  ggplot(aes(x = ward, fill = as.factor(rdt_test_result)))+
+  geom_bar() +
+  facet_wrap(~settlement_type,  labeller = labeller(settlement_type = c("1" = "formal", "2" = "informal",
+                                                                        "3" = "slums")))+
+  theme_minimal() +
+  scale_fill_manual(values = c("1" = "#FFE7E7", "2" = "#B47B84", "3" = "#944E63"), 
+                    labels = c("positive", "negative", "undeterminate"))+
+  scale_x_discrete(labels = c("1"= "Zango", "2" = "Dorayi", # "3" = "Tundun Wazurchi", 
+                              "4" = "Fagge 2", "5" = "Gobirawa", "6" = "Giginyu"))+
+  labs(title = "Kano age distribution by settlement type", 
+       x = "age group", y = "Frequency", fill = "test result")
+
+
+# extract the covariates from Kano raster file 
+# plot the data collection points on the respective shape files 
+# create a geospatial model for the data area level and one that incoporates Krigging 
+# fits a smooth surface over the data points 
