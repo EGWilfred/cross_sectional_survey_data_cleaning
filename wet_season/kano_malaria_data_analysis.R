@@ -1,3 +1,9 @@
+rm(list=ls())
+
+metropolis_name <- "Kano"
+
+source("load_paths.R")
+
 
 Kano_data_malaria_screening <- read_dta(file.path(dropbox, "KN Wet season household malaria screening.dta"))
 Kano_data_hh_individuals <- read_dta(file.path(dropbox, "KN wet season household list wt xteristics.dta"))
