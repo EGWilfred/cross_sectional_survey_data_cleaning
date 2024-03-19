@@ -16,13 +16,14 @@ if (metropolis_name == "Kano"){
   cleaned_data_path <- file.path(DriveDir, "data/nigeria/kano_ibadan_epi/Field data/cleaned_data")
   Kano_data <- read.csv(file.path(dropbox, "UrbanMalariaHousehol-DataUpdate2_DATA_LABELS_2024-01-14_1648.csv"))
   new_names <- read.csv(file.path(dropbox, "data_dictionary.csv"))
-
+  results <- file.path(DriveDir, "projects/mathematical_model/spatial_analysis") 
   }else{
     
   dropbox <-  file.path(DriveDir,"data", "nigeria/kano_ibadan_epi/Field data/Ibadan_data/Household Survey")
   cleaned_data_path <- file.path(DriveDir, "data/nigeria/kano_ibadan_epi/Field data/cleaned_data")
   Ibadan_data <- read.csv(file.path(dropbox, "UrbanMalariaHousehol-ExportedData_DATA_LABELS_2024-01-05_1921.csv"))
   new_names <- read.csv(file.path(dropbox, "ibadan_data_dictionary.csv"))
+  results <- file.path(DriveDir, "projects/mathematical_model/spatial_analysis") 
 }
 
 

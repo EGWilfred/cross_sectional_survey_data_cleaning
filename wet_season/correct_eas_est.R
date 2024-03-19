@@ -424,6 +424,8 @@ malaria_data <- inner_join(modified_merged_dataset_mod,
                            malaria_data_section, 
                            by = "unique_id")
 
+write.csv(malaria_data, file.path(cleaned_data_path, metropolis_name,"all_malaria_data.csv")) 
+
 
 
 Ibadan_data_malaria_data <- malaria_data %>% 
@@ -434,7 +436,7 @@ Ibadan_data_malaria_data <- malaria_data %>%
          gender = gender.x, agebin , dob = dob.x, age = age.x,
          mother_present = mother_present.x, marital_status = marital_status.x,
          rdt_eligibility = rdt_eligibility.x, 
-         ward = ward.x, settlement_type_new = settlement_type_new,
+         ward = ward.y, settlement_type_new = settlement_type_new,
          community_name = community_name.x, #enumaration_area = enumaration_area.x, 
          hh_number = hh_number.x, hhs_weights, name_household_head = name_household_head.x,
          consent_rdt = consent_rdt, rdt_test_result = rdt_test_result,   
@@ -447,6 +449,8 @@ Ibadan_data_malaria_data <- malaria_data %>%
   mutate(members_tested_ea = n()) %>% 
   distinct() 
 
+
+# write.csv(Ibadan_data_malaria_data, file.path(cleaned_data_path, metropolis_name,"spatial_data_analysis.csv")) 
 
 
 
@@ -519,7 +523,9 @@ ggplot(data = plotting_data) +
   theme_bw(base_size = 12, base_family = "")
 
 
-
+ggsave(file.path(results, metropolis_name, "ibadan_tpr_settlement_type.pdf"), 
+       dpi = 300, width = 12,
+       height = 10,)
 
 # box plot 
 
@@ -539,7 +545,7 @@ EA_weight_adjusted_tpr <- Ibadan_data_malaria_data %>%
 #   group_by(settlement_type) %>% 
 #   summarise(count = n())
 
-# write.csv(EA_weight_adjusted_tpr, file.path(cleaned_data_path, metropolis_name,"EA_weight_adjusted_tpr.csv"), row.names = F)  
+write.csv(EA_weight_adjusted_tpr, file.path(cleaned_data_path, metropolis_name,"EA_weight_adjusted_tpr.csv"), row.names = F)  
 
 
 # %>% 
@@ -562,6 +568,11 @@ ggplot(EA_weight_adjusted_tpr, aes(x = settlement_type_new, y = tpr),  fill = se
   #theme_manuscript()+ 
   theme(legend.position = "none") +
   theme_bw(base_size = 12, base_family = "") 
+
+
+ggsave(file.path(results, metropolis_name, "ibadan_tpr_wardlevel.pdf"), 
+       dpi = 300, width = 12,
+       height = 10,)
 
 ea_names <- sort(unique(EA_weight_adjusted_tpr$enumaration_area))
 
