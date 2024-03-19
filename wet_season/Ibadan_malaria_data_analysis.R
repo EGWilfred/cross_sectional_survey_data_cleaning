@@ -8,7 +8,6 @@ Ibadan_data_malaria_screening <- read.csv(file.path(cleaned_data_path, metropoli
 
 
 
-
 Ibadan_data_malaria_data <- Ibadan_data_malaria_screening %>% 
   select(serial_number, unique_id, repeat_instrument = repeat_instrument.x, 
          repeat_instance,request_consent,  household_residents, relatioship_head_household,
@@ -16,8 +15,7 @@ Ibadan_data_malaria_data <- Ibadan_data_malaria_screening %>%
          ward, settlement_type,community_name, enumaration_area, 
          hh_number, longitude, latitude, name_household_head,
          consent_rdt, rdt_test_result ,   
-         dried_blood_sample ,dbs_code)
-
+         dried_blood_sample ,dbs_code) 
 
 # no duplicates at this point 
 
@@ -80,6 +78,15 @@ newdata %>%
        x = "ward", y = "Frequency", fill = "test result")
 
 
+
+
+
+# newdata %>% 
+# raw tpr calculation
+#   #filter(rdt_test_result != "Undeterminate") %>%
+#   # group_by() %>% 
+#   summarise(total_positive = sum(ifelse(rdt_test_result == "POSITIVE", 1, 0)), 
+#             total_tested = n())
 
 
 # plot the data collection points on the respective shape files 

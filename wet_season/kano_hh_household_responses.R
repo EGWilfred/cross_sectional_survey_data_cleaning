@@ -1,10 +1,10 @@
+rm(list=ls())
+
+metropolis_name <- "Kano"
+
 source("load_paths.R")
 
-# source("load_paths.R")
 
-
-# ensure metropolis_name is Kano in the load paths script 
-# rename the dataframe
 
 names(Kano_data) <- gsub(" ", "", new_names$new_name)
 

@@ -33,7 +33,7 @@ hotspot_map <- leaflet(data) %>%
     label = ~Prevalence
   ) %>%
   addLegend(
-    colors = c("red", "blue"),
+    colors = c("red", "green"),
     labels = c("Hotspot", "Not Significant"),
     position = "bottomright"
   )
