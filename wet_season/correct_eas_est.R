@@ -537,7 +537,7 @@ EA_weight_adjusted_tpr <- Ibadan_data_malaria_data %>%
   summarise(positive = sum(malaria_test), 
             total = n(),
             negative = total - positive,
-            tpr = round(sum(malaria_test * overall_hh_weight) / sum(overall_hh_weight) * 100, 3),
+            tpr = round(sum((malaria_test * overall_hh_weight), na.rm = T) / sum(overall_hh_weight,na.rm = T) * 100, 3),
             compliment = 100 - tpr)
 
 
@@ -545,7 +545,7 @@ EA_weight_adjusted_tpr <- Ibadan_data_malaria_data %>%
 #   group_by(settlement_type) %>% 
 #   summarise(count = n())
 
-write.csv(EA_weight_adjusted_tpr, file.path(cleaned_data_path, metropolis_name,"EA_weight_adjusted_tpr.csv"), row.names = F)  
+# write.csv(EA_weight_adjusted_tpr, file.path(cleaned_data_path, metropolis_name,"EA_weight_adjusted_tpr.csv"), row.names = F)  
 
 
 # %>% 
