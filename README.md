@@ -1,7 +1,7 @@
 # Malaria Multilevel Spatial Analysis in Urban Areas of Nigeria
 
 ## Overview
-This project aims to conduct a multilevel spatial analysis of malaria prevalence in urban areas of Nigeria, focusing on the impact of environmental factors and socio-economic status on malaria distribution. Settlement type is included as one of the key covariates in the analysis. The project is structured into three main folders, each containing code for different aspects of the analysis: data cleaning and weight calculation, extraction of environmental covariates, and calculation of the Socioeconomic Development Index (SDI).
+This project aims to conduct a multilevel spatial analysis of malaria prevalence in urban areas of Nigeria, focusing on the impact of environmental factors, health seeking behaviours, human movement and socio-economic status on malaria distribution. The project is structured into three main folders, each containing code for different aspects of the analysis: data cleaning and weight calculation, extraction of environmental covariates, and calculation of the Socioeconomic Demographic Index (SDI).
 
 ## Project Structure
 The project is organized into three main folders:
@@ -21,10 +21,10 @@ Includes all code related to the extraction of environmental covariates from Goo
   - `CovariateAnalysis.R`: Script for the analysis of environmental covariates and their correlation with malaria incidence.
 
 ### 3. SDI
-Contains code for the calculation of the Socioeconomic Development Index (SDI), which is used to assess the socio-economic status of different settlements within the urban areas under study. The SDI is calculated based on various indicators such as household goods, access to clean water, and type of sanitation facilities.
+Contains code for the calculation of the Socioeconomic Demographic Index (SDI), which is used to assess the socio-economic status of different settlements within the urban areas under study. The SDI is calculated based on various indicators such as household goods, access to clean water, and type of sanitation facilities.
 
 - **Main Files:**
-  - `CalculateSDI.R`: Script for calculating the Socioeconomic Development Index.
+  - `CalculateSDI.R`: Script for calculating the Socioeconomic Demographic Index.
   - `SDIAnalysis.R`: Script for analyzing the impact of SDI on malaria distribution.
 
 ## Getting Started
