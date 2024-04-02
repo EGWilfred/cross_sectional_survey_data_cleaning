@@ -35,11 +35,14 @@ distance_df <- data.table::rbindlist(
 names(distance_df) <- c("Departure", "Destination", "Distance(m)")
 
 # Convert data frame to an sf object
-coordinates(df) <- ~longitude+latitude
+
+df = split_list$Ginginyu
+
+coordinates(df) <- ~Longitude+Latitude
 sf_df <- st_as_sf(df)
 
 # Plotting
-ggplot(data = sf_df) +
-  geom_sf() +
-  theme_minimal() +
-  labs(title = "Spatial Data Points in Giginyu Ward")
+# ggplot(data = sf_df) +
+#   geom_sf() +
+#   theme_minimal() +
+#   labs(title = "Spatial Data Points in Giginyu Ward")

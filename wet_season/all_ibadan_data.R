@@ -14,10 +14,11 @@ Ibadan_weight_data <- read.csv(file.path(cleaned_data_path, metropolis_name, "al
   dplyr::select(ward = Ward, enumeration_area = Enumeration_Area, 
                 longitude = X_Enter_GPS_Location_longitude,
                latitude = X_Enter_GPS_Location_latitude, 
-               prob_selected_ward,
+               prob_selected_ward_srs =  prob_selected_ward,
                prob_selected_eas_settlement, 
                prob_selected_hh_structure) %>% 
-  mutate(ward_weight = 1/prob_selected_ward, 
+  mutate( prob_selected_ward = ifelse(ward == "Agugu", 0.5),
+         ward_weight = 1/prob_selected_ward, 
          ea_settlement_weight = 1/prob_selected_eas_settlement, 
          hhs_weights = 1/prob_selected_hh_structure)
 
