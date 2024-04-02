@@ -8,6 +8,22 @@ DriveDir <- file.path(Drive, "Urban Malaria Proj Dropbox", "urban_malaria")
 dhsDir <- file.path(DriveDir, "data")
 cleaned_data <- file.path(dhsDir, "nigeria/kano_ibadan_epi/Field data/cleaned_data")
 
+
+
+# raster files 
+
+NigeriadataDir <- file.path(dhsDir, "Nigeria")
+updated_var <- file.path(NigeriadataDir, "Updated_Covariates")
+IbadanDir <- file.path(dhsDir, "nigeria", "kano_ibadan_epi", "Field data", "cleaned_data", "Ibadan")
+
+rainfall_rasters <-file.path(updated_var, "2019_2020_monthlyrainfallera5")
+temperature_rasters <-file.path(updated_var, "2019_2020_monthlytempera5")
+dewtemp_rasters <-file.path(updated_var, "2019_2020_monthlydewtempera5")
+evi_rasters <-file.path(updated_var, "2023_EVI_MOD13A1")
+ndvi_rasters <-file.path(updated_var, "2023_NDVI_MOD13A1")
+elevation_rasters <-file.path(updated_var, "Elevation")
+pop_count <- file.path(updated_var, "NGA_population_v2_0_gridded")
+
  # only Kano and Ibadan
 
 if (metropolis_name == "Kano"){
