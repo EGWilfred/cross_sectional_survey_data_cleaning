@@ -26,6 +26,8 @@ pop_count <- file.path(updated_var, "NGA_population_v2_0_gridded")
 
  # only Kano and Ibadan
 
+metropolis_name <- "Ibadan"
+
 if (metropolis_name == "Kano"){
   
   dropbox <-  file.path(DriveDir,"data", "nigeria/kano_ibadan_epi/Field data/Kano data/Household Survey")

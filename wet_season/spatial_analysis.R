@@ -8,7 +8,7 @@ library(viridis); library(glm2)
 
 metropolis_name <- "Ibadan"
 
-source("load_paths.R")
+source("~/urban_malaria/cross_sectional_survey_data_cleaning/load_paths.R")
 
 
 
@@ -92,6 +92,9 @@ malaria_cases <- analysis_data %>%
                                   ifelse(rdt_test_result == "NEGATIVE", 0, NA)))
 
 
+# write.csv(malaria_cases, file.path(cleaned_data_path, metropolis_name,"ibadan_enviromental_covariates_coded.csv"))
+
+
 coordinates <- malaria_cases[, c("longitude", "latitude")]
 malaria_cases$location <- paste(malaria_cases$latitude, malaria_cases$longitude, sep = "-")
 
@@ -145,20 +148,25 @@ for (index in seq_along(malaria_cases_new)){
                                 I(gender) +
                                 I(popcount_100m) +
                                 
-                                # environmental around the hse 
+                                # environmental around the hse (summerise into one)
                                 I(stagnant_water_nearby) + 
                                 I(vessels_with_stagnant_water) + 
-                                # I(bushes_nearby)+ 
+                                I(bushes_nearby)+ 
                                 I(dumpsite_nearby) + 
                                 I(overgrown_vegetation) + 
-                                # I(open_drainages) +
+                                I(open_drainages) +
                                 I(clogged_open_drainage) +
                                 I(garden_farm_incompound) +
+                                
+                                # raster files data  
                                 I(elevation) +
                                 I(avgEVI_2023) 
                               
-                              # +
-                              #   I(wealth_index)
+                                # health seeking behavior/ case management
+                                # vector control (itns distribution)
+                                # migration /travel frequency malaria report after travel
+                                # +
+                                # I(wealth_index) # already summarised 
                               ,
                               family = binomial(link = "logit"), 
                               data = prevalence_data)
@@ -187,14 +195,6 @@ odds_ratio <- data.table::rbindlist(lapply(seq_along(ward_models),
 
 
 
-# odds_ratio <- data.table::rbindlist(lapply(seq_along(ward_models), 
-#                      function(x) exp(cbind(OR=coef(ward_models[[x]]), 
-#                                            confint(ward_models[[x]])))))
-
-
-
-
-
 ggplot(odds_ratio %>% filter(ward == "AGUGU"), aes(x = oddsratio, y = variable)) +
   geom_vline(aes(xintercept = 1), size = .25, linetype = "dashed") +
   geom_errorbarh(aes(xmax = ci_high, xmin = ci_low), size = .5, height =
@@ -205,60 +205,30 @@ ggplot(odds_ratio %>% filter(ward == "AGUGU"), aes(x = oddsratio, y = variable))
   theme(panel.grid.minor = element_blank()) 
 
 
+################################################################################################################
+# the spatial model
+################################################################################################################
+newdat <- malaria_cases %>%
+  # select(settlement_type_new, Ward, overgrown_vegetation) %>% 
+  group_by(gender, Ward, agebin) %>% 
+  summarise(value = sum(rdt_test_result, na.rm = T ),
+            total = n(), 
+            tpr = value/total)
 
-# Morans' I test on the prevalence 
-# 
+sum(newdat$total)
 
-# malaria_cases_new <- malaria_cases %>%
-# group_by(Ward, settlement_type_new,
-#          ea_numbers_new, hh_number,
-#          longitude, latitude) %>%
-#   summarise(tpr = sum(rdt_test_result, na.rm = T)/n()) %>%
-#   ungroup() %>%
-#   mutate(Ward = factor(Ward))
-# 
-# moran_list <- list()
-# 
-# for (index in seq_along(malaria_cases_new)){
-#   
-#   malaria_cases_moran <- malaria_cases_new[[index]]
-#   
-#   coordinates(malaria_cases_moran) <- c("longitude", "latitude")
-#   
-#   nb <- spdep::dnearneigh(malaria_cases_moran, d1 = 0, d2 = 1)
-#   
-#   W <- spdep::nb2listw(nb)
-#   
-#   moran <- spdep::moran.test(malaria_cases_moran$tpr, W)
-#   
-#   data_append <- data.frame(ward = malaria_cases_moran$Ward[1],
-#                             p_value = moran$p.value)
-#   
-#   moran_list[[index]] <- data_append
-#   
-# }
-# 
-
-# Step 2: Analysis (Simplified)
-# For demonstration, let's assume a simple analysis correlating malaria cases with one environmental variable
-# More sophisticated statistical or machine learning models could be applied here
+ggplot(newdat, aes(fill=gender, y = total, x= agebin)) + 
+  geom_bar(position="stack", stat="identity")+
+  facet_wrap(~ Ward, ncol = 2)
 
 
+demographic_pop <- malaria_cases %>% 
+  group_by(Ward, settlement_type_new, 
+           gender) %>% 
+  summarise(totals = n())
 
 
-
-
-
-
-# Step 3: Visualization
-# Plot the study area with malaria risk levels
-ggplot() +
-  geom_sf(data = malaria_cases, aes(color = risk_level), size = 2) +
-  scale_color_viridis(option = "magma", direction = -1) + # Use a suitable color scale
-  geom_raster(data = environmental_variables, aes(x = x, y = y, fill = variable)) +
-  coord_sf() + # Use coord_sf() to use the CRS of the sf object
-  labs(title = 'Malaria Risk Map', 
-       subtitle = 'Study Area with Environmental Variables',
-       fill = 'Variable',
-       color = 'Risk Level') +
-  theme_minimal()
+demographic_pop %>%
+  filter(settlement_type_new != "") %>% # only 9 data points removed
+  ggplot(aes(x = agebin, fill = totals))+
+  geom_bar() 

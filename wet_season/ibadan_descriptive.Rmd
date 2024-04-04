@@ -1,0 +1,55 @@
+---
+title: "Ibadan wet season data"
+output: powerpoint_presentation
+date: "2024-04-02"
+---
+
+```{r setup, include=FALSE, }
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+## Desriptive Statistics 
+
+Slide deck provides a detailed description of the Ibadan wet season data. The data was collected from over 3000 households and has a total of over 6000 individuals tested for rdt.
+
+## Wards were the data was collected 
+
+- Agugu
+- Bashorun
+- Challenge
+- Ologuneru
+
+## Slide with R Output
+
+```{r cars, echo = F}
+source("~/urban_malaria/cross_sectional_survey_data_cleaning/load_paths.R", echo = F)
+
+malaria_cases <- read.csv(file.path(cleaned_data_path, metropolis_name,"ibadan_enviromental_covariates_coded.csv"))
+
+
+demographic_pop <- malaria_cases %>% 
+  group_by(Ward, settlement_type_new, 
+           gender, agebin) %>% 
+  summarise(totals = n())
+
+
+demographic_pop %>%
+  filter(settlement_type_new != "") %>% # only 9 data points removed
+  ggplot(aes(x = agebin, fill = totals))+
+  geom_bar() 
+# +
+#   facet_grid(row = vars(gender), col = vars(gender) ,ncol = 2)+
+#   theme_minimal() +
+#   scale_fill_manual(values = c("Formal" = "#FFE7E7", "Informal" = "#B47B84", "Slum" = "#944E63"))+
+#   labs(title = "Ibadan age distribution by settlement type",
+#        x = "age group", y = "Frequency", fill = "settlement type")
+
+
+```
+
+## Slide with Plot
+
+```{r pressure}
+plot(pressure)
+```
+
