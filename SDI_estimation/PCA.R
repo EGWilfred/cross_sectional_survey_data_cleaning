@@ -261,6 +261,19 @@ pc_scores <- pca_result$x
 
 household_data_detailed$wealth_index <- pc_scores[,1]
 
+ 
+
+
+
+average_scores <- rowMeans(pc_scores[, 1:46])
+
+# Add the average_scores as a new column to pc_scores
+household_data_detailed$wealth_index_average <- average_scores
+
+# View the updated data frame with the average scores
+head(pc_scores)
+
+
 household_data_with_46_PCA_Scores <- household_data_detailed[,-52]
 
 
@@ -279,8 +292,8 @@ View(household_data_with_46_PCA_Scores)
 
 # Calculate mean and median
 mean_value <- mean(household_data_detailed$wealth_index)
-mode_value <- mode(household_data_detailed$wealth_index)
 
+#Plotting PCA 1
 ggplot(household_data_detailed,aes(x=settlement_type_new, y=wealth_index))+
  geom_boxplot(data=household_data_detailed, aes(x=settlement_type_new, y=wealth_index), outlier.shape = NA) + theme_manuscript()+
 #  geom_bar(data = household_data_detailed, aes(x=settlement_type_new, y=wealth_index, color=wealth_index), stat = "identity") + theme_manuscript()+
@@ -294,6 +307,20 @@ labs(title = "Plot of Wealth Index",
 )
 
 
+
+#Plotting average of all PCA
+
+ggplot(household_data_detailed,aes(x=settlement_type_new, y=wealth_index_average))+
+  geom_boxplot(data=household_data_detailed, aes(x=settlement_type_new, y=wealth_index_average), outlier.shape = NA) + theme_manuscript()+
+  #  geom_bar(data = household_data_detailed, aes(x=settlement_type_new, y=wealth_index, color=wealth_index), stat = "identity") + theme_manuscript()+
+  geom_hline(yintercept = mean_value, color = "red", linetype = "dashed") +  # Add mean line
+  
+  #geom_jitter(aes(color=settlement_type_new , size = wealth_index), width=0.08)+
+  
+  labs(title = "Plot of Wealth Index",
+       subtitle = "Plot showing settlement type by wealth index of households",
+       caption = "Data source : Cross Sectional Survey - Ibadan Wet Season Household Data"
+  )
 
 
 library(openxlsx)
