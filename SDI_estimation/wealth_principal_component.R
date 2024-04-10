@@ -23,6 +23,10 @@ names(malaria_cases)
 
 ibadan_household_data <- malaria_cases %>% 
   select(serial_number, 
+         # variables commented out because they are common in 
+         # all households and affected PCA out put. Current out put 
+         # only explains 20% of the variation seen in the data will look  
+         # into the details later  
          Ward, 
          longitude, 
          latitude, 
@@ -94,22 +98,18 @@ malaria_cases_coded <- ibadan_household_data %>%
          shared_toilets = ifelse(shared_toilets == "Have own toilet", 1, 0))
 
 
-melted_malaria_cases_coded <- reshape2::melt(malaria_cases_coded,
-                                             id.vars = c("serial_number", "Ward","longitude",
-                                                         "latitude", "settlement_type_new",
-                                                         "ea_numbers_new")) %>%
-  group_by(variable,settlement_type_new ,value) %>%
-  summarise(total = n())
-
-
-  ggplot(data = melted_malaria_cases_coded %>% filter(settlement_type_new  == "Formal"),
-         aes(x = variable, y = total, fill = as.factor(value)))+
-    geom_bar(stat = "identity", position = "stack")+
-   theme(axis.text.x = element_text(angle = 90))
-  # +
-  #   facet_wrap(~settlement_type_new)
-
-  # position = position_stack(vjust = 0.3)
+# melted_malaria_cases_coded <- reshape2::melt(malaria_cases_coded,
+#                                              id.vars = c("serial_number", "Ward","longitude",
+#                                                          "latitude", "settlement_type_new",
+#                                                          "ea_numbers_new")) %>%
+#   group_by(variable,settlement_type_new ,value) %>%
+#   summarise(total = n())
+# 
+# 
+#   ggplot(data = melted_malaria_cases_coded %>% filter(settlement_type_new  == "Formal"),
+#          aes(x = variable, y = total, fill = as.factor(value)))+
+#     geom_bar(stat = "identity", position = "stack")+
+#    theme(axis.text.x = element_text(angle = 90))
 
 
 
@@ -148,16 +148,9 @@ plot(var_explained, xlab="Principal Component", ylab="Proportion of Variance Exp
 
 ggplot(malaria_cases_coded, aes(x = settlement_type_new, y = pca),  fill = settlement_type_new ) +
   geom_boxplot(outlier.shape = NA) +
-  # geom_jitter(aes(color = settlement_type_new, size = members_tested_ea), width = 0.08)+
-  # scale_color_manual(values=c("#FFE7E7",  "#F2A6A2", "#B47B84")) +
   labs(title = "Distribution of household wealth index ",
        x = "Settlement type",
-       y = "household wealth  index"
-       #,
-       #color ="Settlement type",
-       #size = "number tested per EA"
-  ) +
-  #theme_manuscript()+
+       y = "household wealth  index") +
   theme(legend.position = "none") +
   theme_bw(base_size = 12, base_family = "")
 
