@@ -1,3 +1,6 @@
+rm(list=ls())
+
+metropolis_name <- "Ibadan"
 
 package_name <- "factoextra"
 
