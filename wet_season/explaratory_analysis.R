@@ -5,6 +5,46 @@ library(forcats)
 ibadan_data <- read.csv("C:/Users/lml6626/Urban Malaria Proj Dropbox/urban_malaria/data/nigeria/kano_ibadan_epi/Field data/Ibadan_data/UrbanMalariaHousehol-HouseholdSummary_DATA_LABELS_2024-01-05_1908.csv")
 
 
+
+
+perform_univariate_analysis <- function(data) {
+  data_summary <- data %>%
+    summarise_all(function(x) {
+      if (is.numeric(x)) {
+        list(Min = min(x, na.rm = TRUE),
+             Max = max(x, na.rm = TRUE),
+             Mean = mean(x, na.rm = TRUE),
+             Median = median(x, na.rm = TRUE),
+             '1st Qu' = quantile(x, 0.25, na.rm = TRUE),
+             '3rd Qu' = quantile(x, 0.75, na.rm = TRUE),
+             SD = sd(x, na.rm = TRUE))
+      } else {
+        list(Unique = length(unique(x)),
+             'Most Common' = names(sort(table(x), decreasing = TRUE)[1]),
+             Frequency = sort(table(x), decreasing = TRUE)[1])
+      }
+    })
+  
+  print(data_summary)
+  
+  for (column_name in names(data)) {
+    column_data <- data[[column_name]]
+    if (is.numeric(column_data)) {
+      ggplot(data, aes_string(x = column_name)) +
+        geom_histogram(binwidth = diff(range(column_data, na.rm = TRUE))/30, fill = "skyblue", color = "black") +
+        theme_minimal() +
+        ggtitle(paste("Distribution of", column_name))
+    } else {
+      ggplot(data, aes_string(x = column_name)) +
+        geom_bar(fill = "skyblue", color = "black") +
+        theme_minimal() +
+        ggtitle(paste("Frequency of", column_name))
+    }
+    print(ggplot2::last_plot())
+  }
+}
+
+
 ibadan_data_summary <- ibadan_data %>% 
   group_by(Ward) %>% 
   count()

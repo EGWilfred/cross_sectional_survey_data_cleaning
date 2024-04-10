@@ -45,11 +45,9 @@ if (metropolis_name == "Kano"){
 }
 
 
-
-
-
 # packges to use 
-list_of_packages <- c("stringr","ggplot2", "dplyr", "purrr", "haven")
+list_of_packages <- c("stringr","ggplot2", "dplyr", "purrr", "haven", "tidyverse", 
+                     "readxl", "patchwork", "tidyr")
 
 read_install_pacakges <- function(packages = list_of_packages
 ){

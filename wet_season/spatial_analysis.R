@@ -208,18 +208,51 @@ ggplot(odds_ratio %>% filter(ward == "AGUGU"), aes(x = oddsratio, y = variable))
 ################################################################################################################
 # the spatial model
 ################################################################################################################
+
+# demographic breakdown 
+
 newdat <- malaria_cases %>%
   # select(settlement_type_new, Ward, overgrown_vegetation) %>% 
   group_by(gender, Ward, agebin) %>% 
   summarise(value = sum(rdt_test_result, na.rm = T ),
             total = n(), 
-            tpr = value/total)
+            tpr = value/total)%>% 
+  group_by() %>% 
+  group_by(agebin, Ward) %>%
+  # mutate(plot_position = cumsum(total) - total)
+  mutate(plot_position = ifelse(gender == "Female",  0.75*sum(total), 0.5*total))
 
-sum(newdat$total)
+
 
 ggplot(newdat, aes(fill=gender, y = total, x= agebin)) + 
   geom_bar(position="stack", stat="identity")+
-  facet_wrap(~ Ward, ncol = 2)
+  geom_text(aes(x = agebin, y = plot_position, label = total), color = "black",
+            size = 3.5, size = 3.5, nudge_y = 10) +
+  facet_wrap(~ Ward, ncol = 2) + labs(x = "age group", y = "total number of participats")+
+  scale_fill_manual(values = c("#fbb4ae", "#b3cde3")) +
+  theme_minimal() +
+  theme(panel.background = element_blank(),
+        legend.title = element_blank(),
+        text = element_text(size = 18), 
+        legend.position = "bottom", )
+
+
+#exploring the variables and answers of the questionnaires
+
+
+
+newdata_stagnant_water <- malaria_cases %>%
+  # select(settlement_type_new, Ward, overgrown_vegetation) %>% 
+  group_by(settlement_type_new, Ward) %>% 
+  summarise(value = sum(stagnant_water_nearby, na.rm = T ),
+            total = n(),
+            ceiling = value/total)%>% 
+  group_by() %>% 
+  group_by(agebin, Ward) %>%
+  # mutate(plot_position = cumsum(total) - total)
+  mutate(plot_position = ifelse(gender == "Female", sum(total), 0)) 
+
+
 
 
 demographic_pop <- malaria_cases %>% 

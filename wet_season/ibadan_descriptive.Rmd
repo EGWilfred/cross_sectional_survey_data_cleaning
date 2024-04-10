@@ -5,7 +5,8 @@ date: "2024-04-02"
 ---
 
 ```{r setup, include=FALSE, }
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, 
+                      message = FALSE, fig.width= 12, fig.height= 8)
 ```
 
 ## Desriptive Statistics 
@@ -19,7 +20,7 @@ Slide deck provides a detailed description of the Ibadan wet season data. The da
 - Challenge
 - Ologuneru
 
-## Slide with R Output
+## The demographic breakdown of the wet season data in Ibadan
 
 ```{r cars, echo = F}
 source("~/urban_malaria/cross_sectional_survey_data_cleaning/load_paths.R", echo = F)
@@ -27,27 +28,32 @@ source("~/urban_malaria/cross_sectional_survey_data_cleaning/load_paths.R", echo
 malaria_cases <- read.csv(file.path(cleaned_data_path, metropolis_name,"ibadan_enviromental_covariates_coded.csv"))
 
 
-demographic_pop <- malaria_cases %>% 
-  group_by(Ward, settlement_type_new, 
-           gender, agebin) %>% 
-  summarise(totals = n())
+newdat <- malaria_cases %>%
+  # select(settlement_type_new, Ward, overgrown_vegetation) %>% 
+  group_by(gender, Ward, agebin) %>% 
+  summarise(value = sum(rdt_test_result, na.rm = T ),
+            total = n(), 
+            tpr = value/total)%>% 
+  group_by() %>% 
+  group_by(agebin, Ward) %>%
+  # mutate(plot_position = cumsum(total) - total)
+  mutate(plot_position = ifelse(gender == "Female", sum(total), 0))
 
-
-demographic_pop %>%
-  filter(settlement_type_new != "") %>% # only 9 data points removed
-  ggplot(aes(x = agebin, fill = totals))+
-  geom_bar() 
-# +
-#   facet_grid(row = vars(gender), col = vars(gender) ,ncol = 2)+
-#   theme_minimal() +
-#   scale_fill_manual(values = c("Formal" = "#FFE7E7", "Informal" = "#B47B84", "Slum" = "#944E63"))+
-#   labs(title = "Ibadan age distribution by settlement type",
-#        x = "age group", y = "Frequency", fill = "settlement type")
-
+ggplot(newdat, aes(fill=gender, y = total, x= agebin)) + 
+  geom_bar(position="stack", stat="identity")+
+  geom_text(aes(x = agebin, y = plot_position, label = total), color = "black",
+            size = 3.5, size = 3.5, nudge_y = 10) +
+  facet_wrap(~ Ward, ncol = 2)+
+  scale_fill_manual(values = c("#fbb4ae", "#b3cde3")) +
+  theme_minimal() +
+  theme(panel.background = element_blank(),
+        legend.title = element_blank(),
+        text = element_text(size = 18), 
+        legend.position = "bottom")
 
 ```
 
-## Slide with Plot
+## Variable analysis 
 
 ```{r pressure}
 plot(pressure)
