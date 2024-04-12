@@ -1,10 +1,7 @@
 rm(list=ls())
 
-# Load necessary libraries
-# library(sf)
-# library(raster)
-# library(ggplot2)
-library(viridis); library(glm2)
+
+#library(viridis); library(glm2)
 
 metropolis_name <- "Ibadan"
 
@@ -17,7 +14,7 @@ ibadan_covariates <- read.csv(file.path(cleaned_data_path, metropolis_name,"ibad
 
 
 ibadan_env_covariates <-ibadan_covariates %>% 
-  select(Ward, longitude, latitude, 
+  dplyr::select(Ward, longitude, latitude, 
          popcount_100m, avgEVI_2023, elevation)
 
 
@@ -26,7 +23,7 @@ combined_data <- merge(malaria_cleaned,  ibadan_env_covariates)
 
 
 analysis_data <- combined_data %>% 
-  select(Ward, longitude, latitude,
+  dplyr::select(Ward, longitude, latitude, unique_id,
          settlement_type_new, community_name,
          ea_numbers_new, hh_number, hh_total, 
          gender, age, agebin, gender,
@@ -35,16 +32,18 @@ analysis_data <- combined_data %>%
          ceiling_presence, leaves_open, 
          stagnant_water_nearby, vessels_with_stagnant_water, 
          bushes_nearby, dumpsite_nearby, overgrown_vegetation, 
-         open_drainages,clogged_open_drainage, garden_farm_incompound,
+         open_drainages, clogged_open_drainage, garden_farm_incompound,
          
-         #ITNS data availability
+         # ITNS data availability
          itn_presence, why_no_itn, distribution_campaign, anc,
          immunization_visit, gvt_health_facility, pvt_health_facility,
          pharmacy, shop_market, community_healthy_worker, religious_institution,
-         school, other_itn_source, itn_not_known, 
+         school, other_itn_source, itn_not_known, mother_present,
          
          # ITN_usage
-         net_use_frequencey, other_net_use_frequencey, permanently_hung_itn,
+         net_use_frequencey, 
+         other_net_use_frequencey, 
+         permanently_hung_itn,
          itn_inspection_consent,
          
          # ind level weight accounting for sampling strategy
@@ -55,7 +54,7 @@ analysis_data <- combined_data %>%
          rdt_test_result,
          
          #environmental covariates 
-         popcount_100m, avgEVI_2023, elevation
+         popcount_100m, avgEVI_2023, elevation, road_type
          )
   
 
@@ -74,9 +73,25 @@ recode_values_00 <- function(x) {
   case_when(
     x == "Yes" ~ 1,
     x == "No" ~ 0,
+    x == "" ~0,
     TRUE ~ NA_real_
   )
 }
+
+
+recode_values_01 <- function(x) {
+  #data re-coding across many columns 
+  case_when(
+    x == "Daily" ~ 1,
+    x== "Occasionally" ~ 1,
+    x == "Others" ~ 0,
+    x == "Never"~ 0,
+    x == "Rarely" ~ 0,
+    x == "" ~ 0,
+    TRUE ~ NA_real_
+  )
+}
+
 
 
 malaria_cases <- analysis_data %>%
@@ -87,12 +102,14 @@ malaria_cases <- analysis_data %>%
          across(.cols =c(itn_presence, ceiling_presence, leaves_open, 
                          stagnant_water_nearby, vessels_with_stagnant_water, 
                          bushes_nearby, dumpsite_nearby, overgrown_vegetation, 
-                         open_drainages,clogged_open_drainage, garden_farm_incompound), .fns = recode_values_00), 
+                         open_drainages,clogged_open_drainage, garden_farm_incompound, mother_present), .fns = recode_values_00), 
+         across(.cols =c(net_use_frequencey), .fns = recode_values_01),
+         road_type = ifelse(road_type == "Tarred", 1, 0),
          rdt_test_result = ifelse(rdt_test_result == "POSITIVE", 1, 
                                   ifelse(rdt_test_result == "NEGATIVE", 0, NA)))
 
 
-# write.csv(malaria_cases, file.path(cleaned_data_path, metropolis_name,"ibadan_enviromental_covariates_coded.csv"))
+write.csv(malaria_cases, file.path(cleaned_data_path, metropolis_name,"ibadan_enviromental_covariates_coded.csv"))
 
 
 coordinates <- malaria_cases[, c("longitude", "latitude")]
@@ -102,6 +119,7 @@ malaria_cases$location <- paste(malaria_cases$latitude, malaria_cases$longitude,
 
 malaria_cases_new <- malaria_cases %>%
   select(Ward, 
+         unique_id,
          settlement_type_new,
          agebin,
          ea_numbers_new, 
@@ -220,21 +238,43 @@ newdat <- malaria_cases %>%
   group_by() %>% 
   group_by(agebin, Ward) %>%
   # mutate(plot_position = cumsum(total) - total)
-  mutate(plot_position = ifelse(gender == "Female",  0.75*sum(total), 0.5*total))
+  mutate(plot_position = ifelse(gender == "Female",  0.75*sum(total), 0.5*total), 
+         sort_variable = case_when( 
+           agebin == "[0:5]" ~ "a", 
+           agebin == "(5:10]" ~ "b", 
+           agebin == "(10:17]" ~ "c", 
+           agebin == "(17:30]" ~ "d", 
+           agebin == "(30:122]" ~ "e", 
+           TRUE ~ NA_character_  # Default case
+         )) %>% 
+  arrange(agebin, sort_variable) %>% 
+  mutate(age_bin = factor(agebin, levels = c("[0,5]", "(5,10]", "(10,17]", "(17,30]", "(30,122]")))
+
+       
 
 
 
-ggplot(newdat, aes(fill=gender, y = total, x= agebin)) + 
+ggplot(newdat, aes(fill=gender, y = total, x= age_bin)) + 
   geom_bar(position="stack", stat="identity")+
   geom_text(aes(x = agebin, y = plot_position, label = total), color = "black",
-            size = 3.5, size = 3.5, nudge_y = 10) +
+            size = 5, nudge_y = 10) +
   facet_wrap(~ Ward, ncol = 2) + labs(x = "age group", y = "total number of participats")+
   scale_fill_manual(values = c("#fbb4ae", "#b3cde3")) +
   theme_minimal() +
   theme(panel.background = element_blank(),
         legend.title = element_blank(),
-        text = element_text(size = 18), 
+        text = element_text(size = 20), 
         legend.position = "bottom", )
+
+
+ggsave(file.path(results, metropolis_name, "demographic_breakdown.pdf"),
+       dpi = 300, width = 12,
+       height = 8,)
+
+ggsave(file.path(results, metropolis_name, "demographic_breakdown.png"),
+       dpi = 400, width = 14,
+       height = 8,)
+
 
 
 #exploring the variables and answers of the questionnaires

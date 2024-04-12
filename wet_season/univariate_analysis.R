@@ -19,7 +19,7 @@ malaria_cases$location <- paste(malaria_cases$latitude, malaria_cases$longitude,
 
 
 malaria_cases_new <- malaria_cases %>%
-  select(Ward, 
+  dplyr::select(Ward, 
          settlement_type_new,
          agebin,
          ea_numbers_new, 
@@ -165,17 +165,21 @@ plots <- list()
 
 residuals <- lapply(seq_along(multivariate_models), function (x) residuals(multivariate_models[[x]]))
 
+predictions <- lapply(seq_along(multivariate_models), function (x) predict(multivariate_models[[x]], type = "response"))
 
 for (index in seq_along(malaria_cases_new)){
 
   # 
+  # Generate predicted probabilities
+  
   malaria_cases_new[[index]]$residuals <- residuals[[index]]
+  malaria_cases_new[[index]]$predictions <- predictions[[index]]
   
   sp::coordinates(malaria_cases_new[[index]]) <- ~ longitude + latitude 
   
   emp_variogram <- gstat::variogram(residuals ~ 1, data = malaria_cases_new[[index]])
  
-  initial_model <- gstat::vgm(psill = 0.5, model = "Sph", range = 100, nugget = 0.3)
+  initial_model <- gstat::vgm(psill = 0.5, model = "Sph", range = 100, nugget = 0.7)
   
   fit <- gstat::fit.variogram(emp_variogram, model = initial_model)
   
@@ -186,8 +190,39 @@ for (index in seq_along(malaria_cases_new)){
 
 
 
+Ibadan_shapefile <- sf::read_sf(shapefile) %>% 
+  filter(WardName == "Agugu")
+
+boundary_coords <- sf::st_coordinates(sf::st_boundary(Ibadan_shapefile[1,]))
+
+grid <- expand.grid(x = seq(min(boundary_coords[,1]), max(boundary_coords[,1]), by = 0.0001),
+                   y = seq(min(boundary_coords[,2]), max(boundary_coords[,2]), by = 0.0001))
 
 
+df <- malaria_cases_new[[index]]%>% 
+  dplyr::select(longitude, latitude, predictions, 
+                test_result, vessels_with_stagnant_water, settlement_type_new , 
+                  gender, agebin,itn_presence)
+
+locations <- sf::st_as_sf(df, coords = c("longitude", "latitude"), crs = 4326)
+grid <- locations # sf::st_as_sf(grid, coords = c("x", "y"), crs = 4326)
+
+  
+kriging_result <- krige(formula = test_result ~ vessels_with_stagnant_water + settlement_type_new + 
+                        gender + agebin + itn_presence,  
+                        locations, newdata = grid, model = initial_model, 
+                        beta = coef(multivariate_models[[index]])[1:length(coef(multivariate_models[[index]]))])
+
+
+plot(kriging_result)
+
+
+ggplot() +
+  geom_tile(data = as.data.frame(kriging_result), aes(x = lon, y = lat, fill = var1.pred)) + 
+  geom_point(data = as.data.frame(locations), aes(x = lon, y = lat), color = "red") +
+  scale_fill_gradient(low = "yellow", high = "red") +
+  labs(title = "Predicted Malaria Prevalence", fill = "Prevalence") +
+  coord_fixed()
 
 
 variogram_model <- fit.variogram(emp_variogram, model = vgm(psill = 1, "Sph", range = 1, nugget = 0))
@@ -203,7 +238,11 @@ coordinates(grd) <- ~ x + y
 gridded(grd) <- TRUE 
 
 
-kriging_result <- gstat::krige(value ~ 1, data, newdata = grd, model = variogram_model)
+kriging_result <- gstat::krige(value ~ 1, malaria_cases_new[[index]], newdata = grd, model = variogram_model)
+
+kriging_result <- krige(model_residuals ~ 1, locations, newdata = locations, model = v.model)
+
+
 
 kriging_result <- predict(kriging_model, newdata = grd)
 
@@ -213,3 +252,37 @@ spplot(kriging_result["var1.var"], main = "Kriging Variance")
 
 
 
+Ibadan_shapefile <- sf::read_sf(shapefile) %>% 
+  mutate(sampled = ifelse(WardName == "Agugu"|WardName == "Bashorun"|
+                            WardName == "Challenge"|WardName == "Olopomewa", 
+                          "sampled", "unsampled"),
+         labeled = ifelse(WardName == "Agugu"|WardName == "Bashorun"|
+                          WardName == "Challenge"|WardName == "Olopomewa", 
+                        WardName, ""))
+
+
+
+
+ggplot(Ibadan_shapefile)+
+  geom_sf(aes(fill = sampled)) +
+  ggrepel::geom_text_repel( data = Ibadan_shapefile,aes(label =  labeled, geometry = geometry) ,color ='black',
+                            stat = "sf_coordinates", min.segment.length = 0, size = 3.5, force = 1)+
+  scale_fill_manual(values = c(sampled = "plum3" , unsampled = "white"))+
+  guides(size = FALSE)+
+  theme(legend.text = element_text(size = 24)) +
+  labs(fill = "", x = "", y = "")+
+  # theme(panel.grid.minor = element_blank()) +
+  map_theme()
+
+  
+ 
+  
+  
+  ggsave(file.path(results, metropolis_name, "sampled_wards.pdf"),
+         dpi = 400, width = 10,
+         height = 8)
+  
+  ggsave(file.path(results, metropolis_name, "sampled_wards.png"),
+         dpi = 600, width = 10,
+         height = 8)
+  

@@ -161,10 +161,5 @@ combined_plot <- cowplot::plot_grid(plots[[1]], plots[[2]],
 print(combined_plot)
 
 # ggsave("combined_plot.png", combined_plot, width = 10, height = 8)
-
-
-
-
-
 # create a geospatial model for the data area level and one that incoporates Krigging 
 # fits a smooth surface over the data points 

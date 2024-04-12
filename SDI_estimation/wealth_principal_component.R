@@ -25,7 +25,7 @@ malaria_cases <- read.csv(file.path(cleaned_data_path, metropolis_name,"all_mala
 names(malaria_cases)
 
 ibadan_household_data <- malaria_cases %>% 
-  select(serial_number, 
+  dplyr::select(serial_number, unique_id,
          # variables commented out because they are common in 
          # all households and affected PCA out put. Current out put 
          # only explains 20% of the variation seen in the data will look  
@@ -88,11 +88,11 @@ recode_values_00 <- function(x) {
 
 
 malaria_cases_coded <- ibadan_household_data %>%
-  mutate(across(.cols =c(laptop:refrigerator, cupboard:fan), .fns = recode_values), 
-         across(.cols =c(own_livestock), .fns = recode_values_00), 
+  mutate(across(.cols =c(laptop:refrigerator, air_conditioner:generator), .fns = recode_values), 
+         #across(.cols =c(own_livestock), .fns = recode_values_00), 
          number_hh_sharing_compound = ifelse(number_hh_sharing_compound <=2, 1, 0), 
          number_bedrooms = ifelse(number_bedrooms >=2, 1, 0), 
-         home_ownership = ifelse(home_ownership == "Owned by household"| home_ownership == "Owned by family/parents", 1, 0),
+         home_ownership = ifelse(home_ownership == "Owned by household"| home_ownership == "Owned by family/parents", 1, 0), # renting poor 
          house_type = ifelse(house_type == "Single Family Bungalow"| house_type == "Single Family Duplex" |
                                house_type == "Single family home (3 or more flats)", 1, 0), 
          basic_hh_tasks_energy_source  = ifelse(basic_hh_tasks_energy_source == "Electricity", 1, 0),
@@ -101,22 +101,22 @@ malaria_cases_coded <- ibadan_household_data %>%
          shared_toilets = ifelse(shared_toilets == "Have own toilet", 1, 0))
 
 
-# melted_malaria_cases_coded <- reshape2::melt(malaria_cases_coded,
-#                                              id.vars = c("serial_number", "Ward","longitude",
-#                                                          "latitude", "settlement_type_new",
-#                                                          "ea_numbers_new")) %>%
-#   group_by(variable,settlement_type_new ,value) %>%
-#   summarise(total = n())
-# 
-# 
-#   ggplot(data = melted_malaria_cases_coded %>% filter(settlement_type_new  == "Formal"),
-#          aes(x = variable, y = total, fill = as.factor(value)))+
-#     geom_bar(stat = "identity", position = "stack")+
-#    theme(axis.text.x = element_text(angle = 90))
+melted_malaria_cases_coded <- reshape2::melt(malaria_cases_coded,
+                                             id.vars = c("serial_number", "Ward","longitude",
+                                                         "latitude", "settlement_type_new",
+                                                         "ea_numbers_new")) %>%
+  group_by(variable,settlement_type_new ,value) %>%
+  summarise(total = n())
+
+
+  ggplot(data = melted_malaria_cases_coded %>% filter(settlement_type_new  == "Formal"),
+         aes(x = variable, y = total, fill = as.factor(value)))+
+    geom_bar(stat = "identity", position = "stack")+
+   theme(axis.text.x = element_text(angle = 90))
 
 
 
-ibadan_pca_result <- prcomp(malaria_cases_coded[,-(1:6)], center = TRUE, scale. = TRUE)
+ibadan_pca_result <- prcomp(malaria_cases_coded[,-(1:7)], center = TRUE, scale. = TRUE)
 
 
 
@@ -151,18 +151,23 @@ plot(var_explained, xlab="Principal Component", ylab="Proportion of Variance Exp
 
 ggplot(malaria_cases_coded, aes(x = settlement_type_new, y = pca),  fill = settlement_type_new ) +
   geom_boxplot(outlier.shape = NA) +
-  labs(title = "Distribution of household wealth index ",
+  labs(title = "",
        x = "Settlement type",
        y = "household wealth  index") +
   theme(legend.position = "none") +
-  theme_bw(base_size = 12, base_family = "")
+  theme_bw(base_size = 20, base_family = "")
 
 
 ggsave(file.path(results, metropolis_name, "household_wealth_index.pdf"),
        dpi = 300, width = 12,
-       height = 10,)
+       height = 8,)
+
+ggsave(file.path(results, metropolis_name, "household_wealth_index.png"),
+       dpi = 400, width = 12,
+       height = 8,)
 
 
 
-write.csv(malaria_cases_coded, file.path(cleaned_data, metropolis_name, "household_wealth_index.csv"), row.names = F)
+write.csv(malaria_cases_coded, file.path(cleaned_data, metropolis_name, 
+                                         "household_wealth_index.csv"), row.names = F)
 

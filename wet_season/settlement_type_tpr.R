@@ -9,7 +9,7 @@ source("load_paths.R")
 malaria_cleaned <- read.csv(file.path(cleaned_data_path, metropolis_name,"all_malaria_data.csv"))
 
 Ibadan_data_malaria_data <- malaria_cleaned %>% 
-  select(serial_number, unique_id, repeat_instrument,
+  dplyr::select(serial_number, unique_id, repeat_instrument,
          repeat_instance, request_consent,  Ward,
          household_residents, 
          relatioship_head_household,
@@ -50,7 +50,7 @@ Ibadan_data_malaria_data <-  Ibadan_data_malaria_data %>%
 duplicates <- Ibadan_data_malaria_data %>% 
   # duplicated unique ids at this point are repeated line numbers
   group_by(unique_id, agebin) %>% 
-  select(ward, settlement_type_new, ea_number, ea_numbers_new) %>% 
+  dplyr::select(ward, settlement_type_new, ea_number, ea_numbers_new) %>% 
   summarise(count = n()) %>% 
   filter(count>1)
 
@@ -105,17 +105,22 @@ ggplot(data = plotting_data) +
            stat = "identity", position = "stack") +
   geom_text(aes(x = settlement_type, y = value, label = paste(percentage, "(%)")),  
             color = "black",
-            size = 3.5, size = 3.5, nudge_y = 10) +
+            nudge_y = 10, size = 8) +
   scale_fill_manual(values = c("negative" = "#FFE7E7", "positive" = "#944E63")) +
-  labs(title = "Malaria test results by settlement type",
-       x = "Settlement Type",
-       y = "Number of people tested for malaria",
+  labs(title = "",
+       x = "settlement Type",
+       y = "number of people tested for malaria",
        fill = "malaria RDT result") +
-  theme_bw(base_size = 12, base_family = "")
+  theme_bw(base_size = 20, base_family = "")
 
 
 ggsave(file.path(results, metropolis_name, "ibadan_tpr_settlement_type_02.pdf"), 
-       dpi = 300, width = 12,
+       dpi = 400, width = 15,
+       height = 10,)
+
+
+ggsave(file.path(results, metropolis_name, "ibadan_tpr_settlement_type_02.png"), 
+       dpi = 400, width = 15,
        height = 10,)
 
 # box plot 
@@ -142,19 +147,27 @@ ggplot(EA_weight_adjusted_tpr, aes(x = settlement_type_new, y = tpr),  fill = se
   geom_boxplot(outlier.shape = NA) +
   geom_jitter(aes(color = settlement_type_new, size = members_tested_ea), width = 0.08)+
   scale_color_manual(values=c("#FFE7E7",  "#F2A6A2", "#B47B84")) +
-  labs(title = "Distribution of TPR in enumeration area",
-       x = "Settlement Type",
-       y = "Enumaration area TPR", 
-       color ="Settlement type", 
+  labs(title = "",
+       x = "settlement type",
+       y = "enumaration area test positivity rate", 
+       color ="settlement type", 
        size = "number tested per EA") +
   #theme_manuscript()+ 
   theme(legend.position = "none") +
-  theme_bw(base_size = 12, base_family = "") 
+  theme_bw(base_size = 20, base_family = "") 
+
+
+
+
 
 
 ggsave(file.path(results, metropolis_name, "ibadan_tpr_wardlevel00.pdf"), 
        dpi = 300, width = 12,
        height = 10,)
+
+ggsave(file.path(results, metropolis_name, "ibadan_tpr_wardlevel00.png"), 
+       dpi = 400, width = 15,
+       height = 8,)
 
 
 # write.csv(EA_weight_adjusted_tpr, file.path(cleaned_data_path, metropolis_name,"EA_weight_adjusted_tpr.csv"), row.names = F)  
@@ -212,5 +225,9 @@ ggsave(file.path(results, metropolis_name, "ibadan_tpr_settlement_type_ward_02.p
        dpi = 300, width = 12,
        height = 10)
 
+
+ggsave(file.path(results, metropolis_name, "ibadan_tpr_settlement_type_ward_02.png"), 
+       dpi = 400, width = 12,
+       height = 10)
 
 

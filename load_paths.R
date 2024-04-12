@@ -45,9 +45,20 @@ if (metropolis_name == "Kano"){
 }
 
 
+
+
+
+dhsDir <- file.path(DriveDir, "data")
+
+nigeria_data <-  file.path(DriveDir,"data","nigeria")
+
+shapefile <- file.path( nigeria_data, "kano_ibadan/kano_ibadan_shape_files/Ibadan_metro_ward_fiveLGAs/Ibadan_metro_fiveLGAs.shp")
+
+
 # packges to use 
 list_of_packages <- c("stringr","ggplot2", "dplyr", "purrr", "haven", "tidyverse", 
-                     "readxl", "patchwork", "tidyr")
+                     "readxl", "patchwork", "tidyr", "factoextra", "MASS", "broom", 
+                     "glm2", "viridis")
 
 read_install_pacakges <- function(packages = list_of_packages
 ){
