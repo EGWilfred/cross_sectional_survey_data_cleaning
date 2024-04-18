@@ -231,23 +231,16 @@ ggplot(odds_ratio %>% filter(ward == "AGUGU"), aes(x = oddsratio, y = variable))
 
 newdat <- malaria_cases %>%
   # select(settlement_type_new, Ward, overgrown_vegetation) %>% 
-  group_by(gender, Ward, agebin) %>% 
+  group_by(gender, settlement_type_new, agebin) %>% 
   summarise(value = sum(rdt_test_result, na.rm = T ),
             total = n(), 
             tpr = value/total)%>% 
-  group_by() %>% 
-  group_by(agebin, Ward) %>%
-  # mutate(plot_position = cumsum(total) - total)
-  mutate(plot_position = ifelse(gender == "Female",  0.75*sum(total), 0.5*total), 
-         sort_variable = case_when( 
-           agebin == "[0:5]" ~ "a", 
-           agebin == "(5:10]" ~ "b", 
-           agebin == "(10:17]" ~ "c", 
-           agebin == "(17:30]" ~ "d", 
-           agebin == "(30:122]" ~ "e", 
-           TRUE ~ NA_character_  # Default case
-         )) %>% 
-  arrange(agebin, sort_variable) %>% 
+  ungroup() %>% 
+  group_by(agebin, settlement_type_new) %>%
+  mutate(percentage = total/sum(total)) %>% 
+  # ungroup() %>% 
+  mutate(plot_position = ifelse(gender == "Female",  0.75*sum(percentage), 0.25)) %>% 
+  #arrange(agebin, sort_variable) %>% 
   mutate(age_bin = factor(agebin, levels = c("[0,5]", "(5,10]", "(10,17]", "(17,30]", "(30,122]")))
 
        
@@ -255,24 +248,21 @@ newdat <- malaria_cases %>%
 
 
 ggplot(newdat, aes(fill=gender, y = total, x= age_bin)) + 
-  geom_bar(position="stack", stat="identity")+
-  geom_text(aes(x = agebin, y = plot_position, label = total), color = "black",
-            size = 5, nudge_y = 10) +
-  facet_wrap(~ Ward, ncol = 2) + labs(x = "age group", y = "total number of participats")+
+  geom_bar(position="fill", stat="identity")+
+  geom_text(aes(x = agebin, y = plot_position, label = round(percentage*100, 1)), color = "black") +
+  facet_wrap(~ settlement_type_new) + labs(x = "age group", y = "number of participats as a percentage")+
   scale_fill_manual(values = c("#fbb4ae", "#b3cde3")) +
-  theme_minimal() +
-  theme(panel.background = element_blank(),
-        legend.title = element_blank(),
-        text = element_text(size = 20), 
-        legend.position = "bottom", )
+  theme_bw(base_size = 20, base_family = "") +
+  theme(panel.grid.minor = element_blank(),
+        text = element_text(size = 20))
 
 
 ggsave(file.path(results, metropolis_name, "demographic_breakdown.pdf"),
-       dpi = 300, width = 12,
+       dpi = 300, width = 15,
        height = 8,)
 
 ggsave(file.path(results, metropolis_name, "demographic_breakdown.png"),
-       dpi = 400, width = 14,
+       dpi = 400, width = 15,
        height = 8,)
 
 

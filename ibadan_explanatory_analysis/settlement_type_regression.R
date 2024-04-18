@@ -25,8 +25,9 @@ coordinates <- malaria_cases[, c("longitude", "latitude")]
 malaria_cases$location <- paste(malaria_cases$latitude, malaria_cases$longitude, sep = "-")
 
 malaria_cases_new <- malaria_cases %>%
-  dplyr::select(settlement_type_new, #age,
-         agebin,
+  dplyr::select(settlement_type_new,
+                age,
+         #agebin,
          # ea_numbers_new, 
          # hh_number,
          # longitude, 
@@ -37,8 +38,8 @@ malaria_cases_new <- malaria_cases %>%
          elevation, 
          popcount_100m,
          avgEVI_2023,
-         #ceiling_presence, 
-         # #leaves_open, 
+         # ceiling_presence, 
+         # leaves_open, 
          # stagnant_water_nearby, 
          # vessels_with_stagnant_water, 
          # bushes_nearby, 
@@ -47,11 +48,11 @@ malaria_cases_new <- malaria_cases %>%
          # open_drainages, 
          # clogged_open_drainage,
          # garden_farm_incompound, 
-         mother_present,
+         # mother_present,
          overall_hh_weight,
          wealth_index,
          wash_index,
-         road_type,
+        # road_type,
         # ind_weights_hh,
          test_result = rdt_test_result)
 
@@ -65,7 +66,7 @@ malaria_cases_new <- split(malaria_cases_new,
 
 
 
-columns <- c(2:14)
+columns <- c(2:11)
 
 
 #######################################################################################
@@ -86,9 +87,9 @@ for (index in seq_along(malaria_cases_new)){
     prevalence_data  = malaria_cases_new[[index]]
     variable  = names(prevalence_data)[vari]
     
-    prevalence_data$agebin <- factor(prevalence_data$agebin, 
-                                       levels = c("[0,5]", "(5,10]", "(10,17]", 
-                                                  "(17,30]", "(30,122]"))
+    # prevalence_data$agebin <- factor(prevalence_data$agebin, 
+    #                                    levels = c("[0,5]", "(5,10]", "(10,17]", 
+    #                                               "(17,30]", "(30,122]"))
     
     formula <- as.formula(paste("test_result ~", variable))
     
@@ -117,18 +118,14 @@ unlisted_files <- data.table::rbindlist(ward_models) %>%
 
 oldlabels <- unique(unlisted_files$term)
 
-newlabels <- c( "age group (5 - 10)", "age group (10 - 17)", "age group (17 - 30)","age group (30+)", 
-                "gender (male)" ,"itn presence", "elevation", "population density",  "average EVI 2023", 
+newlabels <- c( "age", "gender (male)" ,"itn presence", "elevation", "population density",  "average EVI 2023", 
                 "wealth index", "wash performance index") 
 
 
 
 unlisted_files <- unlisted_files %>% 
   mutate(covariate = case_when(
-    term == "agebin(5,10]"   ~ "age group (5 - 10)",
-    term == "agebin(10,17]"  ~ "age group (10 - 17)",
-    term == "agebin(17,30]"  ~ "age group (17 - 30)",
-    term == "agebin(30,122]" ~ "age group (30+)",
+    term == "age"~"age",
     term == "genderMale"     ~ "gender (male)",
     term == "itn_presence"   ~ "itn presence",
     term == "net_use_frequencey" ~ "itn usage",
@@ -138,7 +135,7 @@ unlisted_files <- unlisted_files %>%
     term == "mother_present" ~ "mother present",
     term == "wealth_index" ~ "wealth index",
     term == "wash_index" ~ "wash index",
-    term == "road_type" ~ "road type",
+    # term == "road_type" ~ "road type",
     TRUE                     ~ NA_character_  # Default case
   ))
 
@@ -149,9 +146,10 @@ ggplot(unlisted_files, aes(x = oddsratio, y = covariate, color = ward)) +
   geom_point(size = 3.5) +
   #scale_y_discrete()
   facet_wrap(~ward)+ labs(colour  = "")+
-  scale_color_manual(values = c("Formal" = "violet", "Informal" = "magenta" ,"Slum" = "violetred"))+
+ # scale_color_manual(values = c("Formal" = "#c8005f", "Informal" = "#ff4770","Slum" = "#86001e"))+
+  scale_color_manual(values = c(Formal = "#00A08A", Informal = "#F2A6A2" , Slum = "#923159"))+
   theme_bw(base_size = 20, base_family = "") + xlab("odds ratio")+
-  theme(panel.grid.minor = element_blank(), legend.position = "bottom") 
+  theme(panel.grid.minor = element_blank()) 
 
 ggsave(file.path(results, metropolis_name, "Univariate_logistic_regression.pdf"),
        dpi = 400, width = 15,
@@ -169,7 +167,8 @@ ggsave(file.path(results, metropolis_name, "Univariate_logistic_regression.png")
 
 
 malaria_cases_new <- malaria_cases %>%
-  dplyr::select(settlement_type_new, #age,
+  dplyr::select(settlement_type_new,
+                age,
          agebin,
          # ea_numbers_new, 
          # hh_number,
@@ -186,25 +185,26 @@ malaria_cases_new <- malaria_cases %>%
          # stagnant_water_nearby, 
          # vessels_with_stagnant_water, 
          # bushes_nearby, 
-         # dumpsite_nearby, 
-         # overgrown_vegetation, 
+         dumpsite_nearby, 
+         overgrown_vegetation, 
          # open_drainages, 
-         # clogged_open_drainage,
-         # garden_farm_incompound, 
-         mother_present,
+         clogged_open_drainage,
+         garden_farm_incompound, 
+         #mother_present,
          overall_hh_weight,
          wealth_index,
          wash_index,
-         road_type,
+         # road_type,
          # ind_weights_hh,
          test_result = rdt_test_result)
 
 
 
 
-covariates <- c("agebin", "gender", "itn_presence", "net_use_frequencey",
-                "elevation", "popcount_100m", "avgEVI_2023", "mother_present",
-                "wealth_index", "wash_index", "road_type")
+covariates <- c("age", "agebin", "gender", "itn_presence", "net_use_frequencey",
+                "elevation", "popcount_100m", "avgEVI_2023",
+                "wealth_index", "wash_index", "clogged_open_drainage", 
+                "garden_farm_incompound")
 
 
 final_model <- data.frame()
@@ -225,7 +225,7 @@ for(settlement in unique(malaria_cases_new$settlement_type)) {
   
   
 
-  if (ncol(subset_data) > 2) { 
+  if (ncol(subset_data) > 1) { 
     
     full_model <- glm(test_result ~ ., data = subset_data[,-1], family = "binomial")
     
@@ -269,9 +269,11 @@ ward_multivariate_models <- data.frame(final_model) %>%
 
 ward_multivariate_models <- ward_multivariate_models %>% 
   mutate(covariates = case_when(
-    Covariate == "agebin(5,10]"   ~ "age group (5 - 10)",
-    Covariate == "agebin(10,17]"  ~ "age group (10 - 17)",
-    Covariate == "agebin(17,30]"  ~ "age group (17 - 30)",
+    Covariate == "age" ~ "age",
+    Covariate == "agebin(17,30]" ~ "age group (18-30)", 
+    Covariate == "agebin[0,5]" ~ "age group (0-5)",
+    Covariate == "agebin(5,10]" ~ "age group (6-10)",
+    Covariate == "agebin(10,17]" ~ "age group (11-17)",
     Covariate == "agebin(30,122]" ~ "age group (30+)",
     Covariate == "genderMale"     ~ "gender (male)",
     Covariate == "itn_presence"   ~ "itn presence",
@@ -282,7 +284,7 @@ ward_multivariate_models <- ward_multivariate_models %>%
     Covariate == "mother_present" ~ "mother present",
     Covariate == "wealth_index" ~ "wealth index",
     Covariate == "wash_index" ~ "wash index",
-    Covariate == "road_type" ~ "road type",
+    #Covariate == "road_type" ~ "road type",
     TRUE                     ~ NA_character_  # Default case
   )) %>% 
   drop_na()
@@ -295,9 +297,9 @@ ggplot(ward_multivariate_models, aes(x = oddsratio, y = covariates, colour = set
   geom_errorbarh(aes(xmax = ci_high, xmin = ci_low), size = .5, height =.2) +
   geom_point(size = 3.5) +
   facet_wrap(~settlement_tpye)+ xlab("odds ratio")+
-  scale_color_manual(values = c("Formal" = "violet", "Informal" = "magenta" ,"Slum" = "violetred"))+
+  scale_color_manual(values = c(Formal = "#00A08A", Informal = "#F2A6A2" , Slum = "#923159"))+
   theme_bw(base_size = 20, base_family = "") +labs(color ="")+
-  theme(panel.grid.minor = element_blank(), legend.position = "bottom") 
+  theme(panel.grid.minor = element_blank(), ) 
 
 
 ggsave(file.path(results, metropolis_name, "multivariate_logistic_regression.pdf"),
@@ -311,7 +313,7 @@ ggsave(file.path(results, metropolis_name, "multivariate_logistic_regression.png
 
 
 
- multivariate_models <- list()
+ # multivariate_models <- list()
 # ward_multivariate_models<- list()
 # 
 # 

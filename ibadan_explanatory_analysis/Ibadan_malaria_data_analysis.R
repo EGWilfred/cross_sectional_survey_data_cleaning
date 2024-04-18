@@ -9,7 +9,7 @@ Ibadan_data_malaria_screening <- read.csv(file.path(cleaned_data_path, metropoli
 
 
 Ibadan_data_malaria_data <- Ibadan_data_malaria_screening %>% 
-  select(serial_number, unique_id, repeat_instrument = repeat_instrument.x, 
+  dplyr::select(serial_number, unique_id, repeat_instrument = repeat_instrument.x, 
          repeat_instance,request_consent,  household_residents, relatioship_head_household,
          gender, age, dob, mother_present, marital_status, rdt_eligibility, 
          ward, settlement_type,community_name, enumaration_area, 
@@ -32,10 +32,11 @@ newdata <- Ibadan_data_malaria_data %>%
                        ifelse(ward == "Bashorun" & grepl("^CH", enumaration_area)|grepl("^ CH", enumaration_area), "Challenge", 
                               ifelse(ward == "Bashorun" & grepl("^AG", enumaration_area)|grepl("^ AG", enumaration_area), "Agugu", 
                                      ifelse(ward == "", "Challenge", ward))))) %>% # no formal settlements in Bashorun
-   mutate(agebin = cut(age, c(0,5,10,20,30,40,50, 60, 70, 122), include.lowest = T))
+   mutate(agebin = cut(age, c(0,5,10,17,30, 122), include.lowest = T))
 
 ggplot(newdata, aes(x = agebin, fill = gender))+
   geom_bar() +
+  facet_grid(~ settlement_type)+
   theme_minimal() +
   scale_fill_manual(values = c("Male" = "#FFE7E7", "Female" = "#944E63"))+
   labs(title = "Ibadan age sex distribution", 

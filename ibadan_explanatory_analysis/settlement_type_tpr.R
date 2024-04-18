@@ -145,13 +145,14 @@ EA_weight_adjusted_tpr <- Ibadan_data_malaria_data %>%
 
 ggplot(EA_weight_adjusted_tpr, aes(x = settlement_type_new, y = tpr),  fill = settlement_type_new ) +
   geom_boxplot(outlier.shape = NA) +
-  geom_jitter(aes(color = settlement_type_new, size = members_tested_ea), width = 0.08)+
-  scale_color_manual(values=c("#FFE7E7",  "#F2A6A2", "#B47B84")) +
+  geom_jitter(aes(color = settlement_type_new, size = members_tested_ea), width = 0.08, alpha = 0.5)+
+  # scale_color_manual(values=c("#FFE7E7",  "#F2A6A2", "#B47B84")) +
+  scale_color_manual(values = c(Formal = "#00A08A", Informal = "#F2A6A2" , Slum = "#923159"))+
   labs(title = "",
        x = "settlement type",
        y = "enumaration area test positivity rate", 
        color ="settlement type", 
-       size = "number tested per EA") +
+       size = "number tested") +
   #theme_manuscript()+ 
   theme(legend.position = "none") +
   theme_bw(base_size = 20, base_family = "") 
@@ -230,4 +231,62 @@ ggsave(file.path(results, metropolis_name, "ibadan_tpr_settlement_type_ward_02.p
        dpi = 400, width = 12,
        height = 10)
 
+
+
+age_adjusted_tpr <- Ibadan_data_malaria_data %>%
+  filter(settlement_type_new != "", rdt_test_result != "Undeterminate") %>% 
+  # st_drop_geometry() %>%
+  mutate(malaria_test = ifelse(rdt_test_result == "POSITIVE", 1, 0)) %>%
+  group_by(settlement_type_new, agebin ) %>% 
+  summarise(positive = sum(malaria_test), 
+            total = n(),
+            negative = total - positive,
+            tpr = round(sum((malaria_test * overall_hh_weight), na.rm = T) / sum(overall_hh_weight,na.rm = T) * 100, 3),
+            compliment = 100 - tpr)
+
+
+new_ward_data <- age_adjusted_tpr %>% 
+  dplyr::select(agebin, settlement_type_new, positive, negative) %>% 
+  reshape2::melt(id = c("settlement_type_new", "agebin"))
+
+
+names(new_ward_data) <- c("settlement_type", "agebin", "result", "value")
+
+
+
+labels_ward_new_data <- age_adjusted_tpr %>% 
+  dplyr::select(settlement_type_new, agebin, tpr, compliment) %>% 
+  reshape2::melt(id = c("settlement_type_new", "agebin")) %>% 
+  mutate(variable = ifelse(variable == "tpr", "positive", "negative"))
+
+names(labels_ward_new_data) <- c("settlement_type", "agebin", "result", "percentage")
+
+plotting_data <- inner_join(new_ward_data, labels_ward_new_data) %>% 
+  mutate(plot_position = cumsum(value) - ( value))%>% 
+  mutate(age_bin = factor(agebin, levels = c("[0,5]", "(5,10]", "(10,17]", "(17,30]", "(30,122]")))
+
+
+
+ggplot(data = plotting_data) +
+  geom_bar(aes(x = age_bin, y = value, fill = result), 
+           stat = "identity", position = "stack") +
+  geom_text(aes(x = age_bin, y = value, label = paste(round(percentage, 1), "(%)")),  
+            color = "black",
+            size = 3.5,  nudge_y = 10) +
+  facet_wrap(~settlement_type)+
+  scale_fill_manual(values = c("negative" = "#FFE7E7", "positive" = "#944E63")) +
+  labs(x = "age groups",
+       y = "number of people tested for malaria",
+       fill = "") +
+  theme_bw(base_size = 12, base_family = "")
+
+
+ggsave(file.path(results, metropolis_name, "malaria_burden_age_and_settlement_type.pdf"), 
+       dpi = 300, width = 12,
+       height = 8)
+
+
+ggsave(file.path(results, metropolis_name, "malaria_burden_age_and_settlement_type.png"), 
+       dpi = 400, width = 12,
+       height = 8)
 
