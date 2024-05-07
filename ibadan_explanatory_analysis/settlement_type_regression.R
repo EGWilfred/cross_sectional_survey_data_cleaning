@@ -7,12 +7,18 @@ source("~/urban_malaria/cross_sectional_survey_data_cleaning/load_paths.R")
 
 wash_performance_index <- read.csv( file.path(cleaned_data, metropolis_name, "household_wash_index.csv")) %>% 
   dplyr::select(unique_id, wash_index = pca)%>%
-  dplyr::distinct(unique_id, .keep_all = TRUE)
+  mutate(wash_index_class = ifelse(wash_index < 0.2539444, "inadequate", "adequate")) %>% 
+  dplyr::distinct(unique_id, .keep_all = TRUE) 
 
 
 
 wealthindex <- read.csv( file.path(cleaned_data, metropolis_name, "household_wealth_index.csv")) %>% 
   dplyr::select(unique_id, wealth_index = pca) %>%
+  mutate(wealth_index_class = ifelse(wealth_index <= -1.7, "poorest", 
+                                   ifelse(wealth_index <= -1.3754918 , "second", 
+                                          ifelse(wealth_index <= -0.4837534, "middle", 
+                                                 ifelse(wealth_index < 1.0234251, "fourth", 
+                                                        ifelse(wealth_index > 1.0234251, "wealthiest", NA)))))) %>% 
   dplyr::distinct(unique_id, .keep_all = TRUE)%>%
   dplyr::inner_join(wash_performance_index)
 
@@ -26,34 +32,13 @@ malaria_cases$location <- paste(malaria_cases$latitude, malaria_cases$longitude,
 
 malaria_cases_new <- malaria_cases %>%
   dplyr::select(settlement_type_new,
-                age,
-         #agebin,
-         # ea_numbers_new, 
-         # hh_number,
-         # longitude, 
-         # latitude, 
+         agebin,
          gender,
          itn_presence,
          net_use_frequencey,
-         elevation, 
-         popcount_100m,
-         avgEVI_2023,
-         # ceiling_presence, 
-         # leaves_open, 
-         # stagnant_water_nearby, 
-         # vessels_with_stagnant_water, 
-         # bushes_nearby, 
-         # dumpsite_nearby, 
-         # overgrown_vegetation, 
-         # open_drainages, 
-         # clogged_open_drainage,
-         # garden_farm_incompound, 
-         # mother_present,
+         wealth_index_class, 
+         wash_index_class,
          overall_hh_weight,
-         wealth_index,
-         wash_index,
-        # road_type,
-        # ind_weights_hh,
          test_result = rdt_test_result)
 
 # predictor_vars <- setdiff(names(malaria_cases_new), "test_result")
@@ -66,7 +51,7 @@ malaria_cases_new <- split(malaria_cases_new,
 
 
 
-columns <- c(2:11)
+columns <- c(2:8)
 
 
 #######################################################################################
@@ -87,9 +72,16 @@ for (index in seq_along(malaria_cases_new)){
     prevalence_data  = malaria_cases_new[[index]]
     variable  = names(prevalence_data)[vari]
     
-    # prevalence_data$agebin <- factor(prevalence_data$agebin, 
-    #                                    levels = c("[0,5]", "(5,10]", "(10,17]", 
-    #                                               "(17,30]", "(30,122]"))
+    prevalence_data$agebin <- factor(prevalence_data$agebin,
+                                       levels = c("[0,5]", "(5,10]", "(10,17]",
+                                                  "(17,30]", "(30,122]"))
+    
+    prevalence_data$wealth_index_class <- factor(prevalence_data$wealth_index_class,
+                                     levels = c("poorest", "second", "middle",
+                                                "fourth", "wealthiest"))
+    
+    prevalence_data$wash_index_class <- factor(prevalence_data$wash_index_class,
+                                           levels = c("adequate", "inadequate"))
     
     formula <- as.formula(paste("test_result ~", variable))
     
@@ -115,29 +107,40 @@ for (index in seq_along(malaria_cases_new)){
 unlisted_files <- data.table::rbindlist(ward_models) %>%
   filter(term != "(Intercept)",
          term != "overall_hh_weight")
-
-oldlabels <- unique(unlisted_files$term)
-
-newlabels <- c( "age", "gender (male)" ,"itn presence", "elevation", "population density",  "average EVI 2023", 
-                "wealth index", "wash performance index") 
+# 
+# oldlabels <- unique(unlisted_files$term)
+# 
+# newlabels <- c( "agebin", "gender (male)" ,"itn presence", "elevation", "population density",  "average EVI 2023", 
+#                 "wealth index", "wash performance index") 
 
 
 
 unlisted_files <- unlisted_files %>% 
   mutate(covariate = case_when(
-    term == "age"~"age",
-    term == "genderMale"     ~ "gender (male)",
-    term == "itn_presence"   ~ "itn presence",
-    term == "net_use_frequencey" ~ "itn usage",
-    term == "elevation" ~"elevation" ,
-    term == "popcount_100m" ~"population density",
-    term == "avgEVI_2023" ~"average EVI 2023 (July - September)",
-    term == "mother_present" ~ "mother present",
-    term == "wealth_index" ~ "wealth index",
-    term == "wash_index" ~ "wash index",
-    # term == "road_type" ~ "road type",
+    term  == "age" ~ "age",
+    term  == "agebin(17,30]" ~ "age group (18-30)", 
+    term  == "agebin[0,5]" ~ "age group (0-5)",
+    term  == "agebin(5,10]" ~ "age group (6-10)",
+    term  == "agebin(10,17]" ~ "age group (11-17)",
+    term  == "agebin(30,122]" ~ "age group (30+)",
+    term  == "genderMale"     ~ "gender (male)",
+    term == "wash_index_classinadequate" ~ "wash index (inadequate)",
+    term == "wealth_index_classmiddle" ~ "WI (middle)",
+    term == "wealth_index_classfourth" ~ "WI (fourth)",
+    term == "wealth_index_classsecond" ~ "WI (second)",
+    term == "wealth_index_classwealthiest" ~ "WI (wealthiest)",
+    term  == "itn_presence"   ~ "itn presence",
+    term  == "net_use_frequencey" ~ "itn usage",
+    term  == "elevation" ~"elevation" ,
+    term  == "popcount_100m" ~"population density",
+    term  == "avgEVI_2023" ~"average EVI 2023 (July - September)",
+    term  == "mother_present" ~ "mother present",
+    term  == "wealth_index" ~ "wealth index",
+    term  == "wash_index" ~ "wash index",
+    #Covariate == "road_type" ~ "road type",
     TRUE                     ~ NA_character_  # Default case
-  ))
+  )) %>% 
+  drop_na()
 
 
 ggplot(unlisted_files, aes(x = oddsratio, y = covariate, color = ward)) +
@@ -169,42 +172,28 @@ ggsave(file.path(results, metropolis_name, "Univariate_logistic_regression.png")
 malaria_cases_new <- malaria_cases %>%
   dplyr::select(settlement_type_new,
                 age,
-         agebin,
-         # ea_numbers_new, 
-         # hh_number,
-         # longitude, 
-         # latitude, 
-         gender,
-         itn_presence,
-         net_use_frequencey,
-         elevation, 
-         popcount_100m,
-         avgEVI_2023,
-         #ceiling_presence, 
-         # #leaves_open, 
-         # stagnant_water_nearby, 
-         # vessels_with_stagnant_water, 
-         # bushes_nearby, 
-         dumpsite_nearby, 
-         overgrown_vegetation, 
-         # open_drainages, 
-         clogged_open_drainage,
-         garden_farm_incompound, 
-         #mother_present,
-         overall_hh_weight,
-         wealth_index,
-         wash_index,
-         # road_type,
-         # ind_weights_hh,
-         test_result = rdt_test_result)
+                agebin,
+                gender,
+                itn_presence,
+                net_use_frequencey,
+                overgrown_vegetation,
+                clogged_open_drainage,
+                garden_farm_incompound, 
+                overall_hh_weight,
+                wealth_index_class,
+                wash_index_class,
+                test_result = rdt_test_result)
 
 
 
 
-covariates <- c("age", "agebin", "gender", "itn_presence", "net_use_frequencey",
-                "elevation", "popcount_100m", "avgEVI_2023",
-                "wealth_index", "wash_index", "clogged_open_drainage", 
-                "garden_farm_incompound")
+covariates <- c("agebin", "gender", #"itn_presence", 
+                "net_use_frequencey",
+                #"elevation", "popcount_100m", "avgEVI_2023",
+                "wealth_index_class", "wash_index_class"
+               # , #"clogged_open_drainage", 
+                #"garden_farm_incompound"
+                )
 
 
 final_model <- data.frame()
@@ -214,6 +203,9 @@ for(settlement in unique(malaria_cases_new$settlement_type)) {
 
   subset_data <- na.omit(malaria_cases_new[malaria_cases_new$settlement_type_new == settlement, ])
   
+  subset_data$agebin <- factor(subset_data$agebin,
+                                   levels = c("[0,5]", "(5,10]", "(10,17]",
+                                              "(17,30]", "(30,122]"))
 
   for (var in covariates) {
     if (is.factor(subset_data[[var]]) && nlevels(subset_data[[var]]) < 2) {
@@ -230,7 +222,7 @@ for(settlement in unique(malaria_cases_new$settlement_type)) {
     full_model <- glm(test_result ~ ., data = subset_data[,-1], family = "binomial")
     
     
-    stepwise_model <- stepAIC(full_model, direction = "both", trace = FALSE)
+    stepwise_model <- stepAIC(full_model, direction = "both", trace = T)
     
     summary_model <- summary(stepwise_model)
     
@@ -276,7 +268,13 @@ ward_multivariate_models <- ward_multivariate_models %>%
     Covariate == "agebin(10,17]" ~ "age group (11-17)",
     Covariate == "agebin(30,122]" ~ "age group (30+)",
     Covariate == "genderMale"     ~ "gender (male)",
+    Covariate == "wash_index_classadequate" ~ "wash index (adequate)",
+    Covariate == "wealth_index_classmiddle" ~ "WI (middle)",
+    Covariate == "wealth_index_classfourth" ~ "WI (fourth)",
+    Covariate == "wealth_index_classsecond" ~ "WI (second)",
+    Covariate == "wealth_index_classwealthiest" ~ "WI (wealthiest)",
     Covariate == "itn_presence"   ~ "itn presence",
+    # Covariate == "itn_usage"   ~ "itn usage",
     Covariate == "net_use_frequencey" ~ "itn usage",
     Covariate == "elevation" ~"elevation" ,
     Covariate == "popcount_100m" ~"population density",

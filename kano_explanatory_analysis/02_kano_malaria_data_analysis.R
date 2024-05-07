@@ -10,6 +10,7 @@ Kano_data_hh_individuals <- read_dta(file.path(dropbox, "KN wet season household
 
 
 names(Kano_data_malaria_screening) <-  c("serial_number", "repeat_instrument", "repeat_instance",
+                                         # renamed to fit the data dictionary and match with the 
                                          "request_consent",  "line_number02", "consent_rdt", "rdt_test_result" ,   
                                          "dried_blood_sample" ,"dbs_code" ,"interviwer_name"  ,"complete00")
 

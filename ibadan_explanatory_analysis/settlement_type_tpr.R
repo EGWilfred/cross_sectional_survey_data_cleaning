@@ -67,14 +67,12 @@ duplicates <- Ibadan_data_malaria_data %>%
 #   filter(!unique_id %in% serial_nums)
 
 
-
 weight_adjusted_tpr <- Ibadan_data_malaria_data %>%
   filter(settlement_type_new != "", rdt_test_result != "Undeterminate") %>% 
   mutate(malaria_test = ifelse(rdt_test_result == "POSITIVE", 1, 0)) %>%
   group_by(settlement_type_new) %>% 
   summarise(positive = sum(malaria_test), 
-            total = n(),
-            negative = total - positive,
+            total = n(), negative = total - positive,
             tpr = round(sum(malaria_test * overall_hh_weight, na.rm = T) / sum(overall_hh_weight, na.rm = T) * 100, 3),
             compliment = 100 - tpr)
 
@@ -156,9 +154,6 @@ ggplot(EA_weight_adjusted_tpr, aes(x = settlement_type_new, y = tpr),  fill = se
   #theme_manuscript()+ 
   theme(legend.position = "none") +
   theme_bw(base_size = 20, base_family = "") 
-
-
-
 
 
 
@@ -290,3 +285,16 @@ ggsave(file.path(results, metropolis_name, "malaria_burden_age_and_settlement_ty
        dpi = 400, width = 12,
        height = 8)
 
+
+#########################################################
+
+household_tested <- Ibadan_data_malaria_data %>%
+  filter(settlement_type_new != "", rdt_test_result != "Undeterminate") %>% 
+  group_by(settlement_type_new, Ward, serial_number, ea_numbers_new) %>% 
+  summarise(total = n()) %>%
+  group_by(settlement_type_new, ea_numbers_new, Ward) %>%
+  summarise(total2 = n())
+
+write.csv(household_tested, file.path(cleaned_data_path, metropolis_name,"ibadan_summary_household_tested.csv")) 
+
+#############################################

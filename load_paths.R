@@ -26,7 +26,7 @@ pop_count <- file.path(updated_var, "NGA_population_v2_0_gridded")
 
  # only Kano and Ibadan
 
-metropolis_name <- "Ibadan"
+#metropolis_name <- "Ibadan"
 
 if (metropolis_name == "Kano"){
   
@@ -48,11 +48,12 @@ if (metropolis_name == "Kano"){
 
 
 
-dhsDir <- file.path(DriveDir, "data")
-
-nigeria_data <-  file.path(DriveDir,"data","nigeria")
-
-shapefile <- file.path( nigeria_data, "kano_ibadan/kano_ibadan_shape_files/Ibadan_metro_ward_fiveLGAs/Ibadan_metro_fiveLGAs.shp")
+# dhsDir <- file.path(DriveDir, "data")
+# 
+# nigeria_data <-  file.path(DriveDir,"data","nigeria")
+# 
+# shapefile <- file.path( nigeria_data, "kano_ibadan/kano_ibadan_shape_files/Ibadan_metro_ward_fiveLGAs/Ibadan_metro_fiveLGAs.shp")
+# 
 
 
 # packges to use 
