@@ -1,12 +1,31 @@
+rm(list=ls())
 
-###Household Listed
+metropolis_name <- "Kano"
+
+source("load_paths.R")
+
+###Household Listed into 
 kano_hh_listed_00<- read_excel(file.path(dropbox, "Kano_with_new_ward_2023-12-01.xlsx"))
 kano_hh_listed_01 <- read_excel(file.path(dropbox, "Kano_HH_Listing_2023-12-01 (1).xlsx"))
 
 
 kano_hh_listed <- rbind(kano_hh_listed_00, kano_hh_listed_01)
 
-# kano_hh_sampled <- read.csv(file.path(NuDir , "excel files", "Ib_sampled_list_final.csv"))
+
+# hh_listed <- kano_hh_listed %>% 
+#   dplyr::select(`Enumeration Area`, `EA Serial Number`, `EA Serial Number`, 
+#                 Ward) %>%
+# distinct()
+
+
+kano_hh_sampled <- read_excel(file.path(dropbox, "KN_sampled_HHs_2024.xlsx"))
+
+
+# hh-sampled <- kano_hh_sampled %>% 
+#   dplyr::select(settlement, ward, enumerationarea, 
+#                 easerialnumber) %>%
+#   mutate(new_ea_name = paste0(enumerationarea, "/", easerialnumber))
+#   distinct()
 
 
 
@@ -32,7 +51,8 @@ listed_households <- kano_hh_listed %>%
                                         ward == "Gobirawa"~ 1, 
                                         ward == "Giginyu"~ 1,
                                         ward == "Fagge D2"~ 1)) %>%
-  group_by(ea_serial_number, hh_serial_number) %>%
+  group_by(ea_serial_number, ward, hh_serial_number, structure_serial_number) %>%
+  distinct() %>% 
   mutate(total_hh_listed_structure = n())
 
 
@@ -62,23 +82,31 @@ selected_household <- kano_hh_sampled %>%
       #TRUE ~ Value  # If none of the conditions match, keep the original 'Value'
     )
   ) %>% 
-  group_by(enumeration_area, X_001_serial_number_of_structure) %>% 
+  group_by(enumerationarea, easerialnumber, ward, serialnumberofstructure) %>% 
+  dplyr::distinct() %>% 
   mutate(total_hh_selected_structure = n()) %>% 
   ungroup()
 
-
+# correct up to this points
 
 
 all_selected_hh <- inner_join(listed_households, 
                               selected_household, 
-                              by = c("X_index")) %>% 
+                              by = c( "index" = "_index")) %>% 
   mutate(prob_selected_hh_structure = total_hh_selected_structure/total_hh_listed_structure)
+# need clarity on the probability I am getting some are greater than one.
+
+
+# View(all_selected_hh %>% dplyr::select(total_hh_selected_structure, total_hh_in_structure, 
+#                                        total_hh_listed_structure,total_hh_in_structure,
+#                                        prob_selected_hh_structure))
 
 
 
 weights_data <- all_selected_hh %>% 
-  dplyr::select(longitude = X_Enter_GPS_Location_longitude, 
-                latitude = X_Enter_GPS_Location_latitude, 
+  dplyr::select(longitude, 
+                latitude, ward, index, ea_serial_number, hh_serial_number, 
+                structure_serial_number,
                 prob_selected_ward, prob_selected_eas_settlement,
                 prob_selected_hh_structure)
 

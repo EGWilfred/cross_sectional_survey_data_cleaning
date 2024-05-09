@@ -3,8 +3,6 @@ rm(list=ls())
 metropolis_name <- "Ibadan"
 
 source("load_paths.R")
-
-if (!requireNamespace("geosphere", quietly = TRUE)) install.packages("geosphere")
 library(geosphere)
 
 dhsDir <- file.path(DriveDir, "data")
@@ -17,13 +15,13 @@ Ibadan_shapefile <- sf::read_sf(shapefile)
 
 # Example data: Latitude and Longitude
 centroids_Ibadan <- Ibadan_data_malaria_data %>% 
-  dplyr::select(longitude, latitude, Ward, ea_numbers_new) %>% 
-  distinct()
+  dplyr::select(longitude, latitude, Ward, ea_numbers_new, settlement_type_new) %>% 
+  dplyr::distinct()
 
 
 split_data <- split(centroids_Ibadan, centroids_Ibadan$ea_numbers_new)
 
-
+###############################################################################
 # functions 
 
 deg2rad <- function(degrees) {
@@ -33,6 +31,10 @@ deg2rad <- function(degrees) {
 rad2deg <- function(radians) {
   return(radians * 180 / pi)
 }
+
+
+###############################################################################
+#
 
 centroids <- list()
 
@@ -80,9 +82,13 @@ final_centroid_data <- data.table::rbindlist(centroids)
 
 newdata <- EA_weight_adjusted_tpr %>% 
   inner_join(final_centroid_data) %>% 
-  mutate(Ward == "OLOGUNERU", "OLOPOMEWA", Ward)
+  mutate(Ward == "OLOGUNERU", "OLOPOMEWA", Ward, 
+         tpr_cut = cut(tpr, breaks = c(0, 2, 4, 8, 12, 20, 50),
+                       include.lowest = TRUE, include.highest = TRUE, right = TRUE ))
   
 
+color_palette <- grDevices::colorRampPalette(colors = c("darkgreen","yellow", "red"))
+class_colors <- color_palette(6)
 
 wards_interest <- c("Bashorun",  "Challenge",
                     "Olopomewa", "Agugu" )
@@ -116,10 +122,12 @@ for (index in seq_along(wards_interest)){
  ggplot(shapefile_interest)+
     geom_sf(fill = NA) +
     geom_point(data = coordinate_intersection,  
-               aes(geometry = geometry, col = tpr, shape = settlement_type_new), 
+               aes(geometry = geometry, col = tpr_cut, shape = settlement_type_new), 
                stat= "sf_coordinates", size = 4) +
-    # scale_color_manual(values = c(Formal = "#00A08A", Informal = "#F2A6A2" , Slum = "#923159"))+
-    scale_color_gradient(low = "yellow", high = "red", na.value = NA) +
+    scale_color_manual(values = c("[0,2]" = class_colors[1], "(2,4]" = class_colors[2],
+                                  "(4,8]" = class_colors[3] ,"(8,12]" = class_colors[4], 
+                                  "(12,20]" = class_colors[5], "(20,50]" = class_colors[6]))+
+    # scale_color_gradient(low = "yellow", high = "red", na.value = NA) +
     scale_shape_manual(values = c(Formal = 15, Informal = 16 , Slum = 17))+
     guides(size = FALSE)+
     map_theme()+ 
@@ -136,4 +144,37 @@ for (index in seq_along(wards_interest)){
 }
 
 
+
+
+greater_than_twenty <- newdata %>% 
+  filter(tpr > 15) %>% 
+  mutate(tpr_cut = cut(tpr, breaks = c(15,20, 25, 30, 35, 40, 45, 50),
+                       include.lowest = TRUE, include.highest = TRUE, right = TRUE )) %>% 
+  group_by(tpr_cut) %>% 
+  summarise(value = n())
+
+# %>% 
+#   inner_join(Ibadan_data_malaria_data, by = "ea_numbers_new") 
+
+ggplot(data = greater_than_twenty) +
+  geom_bar(aes(x = tpr_cut, y = value), stat = "identity") +
+  labs(x = "test positivity rate",
+       y = "frequency",
+       fill = "") +
+  theme_bw(base_size = 12, base_family = "")
+
+
+ggsave(file.path(results, metropolis_name, paste0(wards ,"tpr_over_15.pdf")), 
+       dpi = 400, width = 15, height = 10)
+
+
+
+
+finally_than_twenty <- newdata %>% 
+  filter(tpr > 15) %>%
+  inner_join(Ibadan_data_malaria_data, by = "ea_numbers_new") %>% 
+  dplyr::select(serial_number, longitude.x, latitude.x, Ward.x, ea_numbers_new, tpr) %>% 
+  distinct()
+
+write.csv(finally_than_twenty, file.path(cleaned_data_path, metropolis_name,"EA_weight_adjusted_tpr_greater_than15.csv"))
 

@@ -5,12 +5,13 @@ metropolis_name <- "Ibadan"
 source("load_paths.R")
 
 
-
 malaria_cleaned <- read.csv(file.path(cleaned_data_path, metropolis_name,"all_malaria_data.csv"))
+
 
 Ibadan_data_malaria_data <- malaria_cleaned %>% 
   dplyr::select(serial_number, unique_id, repeat_instrument,
-         repeat_instance, request_consent,  Ward,
+         repeat_instance, request_consent,  
+         longitude, latitude, Ward,
          household_residents, 
          relatioship_head_household,
          gender, agebin , dob, age,
@@ -32,6 +33,10 @@ Ibadan_data_malaria_data <- malaria_cleaned %>%
   distinct()
 
 
+
+
+
+
 Ibadan_data_malaria_data <-  Ibadan_data_malaria_data %>% 
   group_by(Ward, settlement_type_new, ea_numbers_new, hh_number, agebin) %>%
   mutate(ind_total = n(),
@@ -42,9 +47,7 @@ Ibadan_data_malaria_data <-  Ibadan_data_malaria_data %>%
   ungroup() 
 
 
-
 # write.csv(Ibadan_data_malaria_data, file.path(cleaned_data_path, metropolis_name,"spatial_data_analysis.csv")) 
-
 
 
 duplicates <- Ibadan_data_malaria_data %>% 
@@ -52,7 +55,7 @@ duplicates <- Ibadan_data_malaria_data %>%
   group_by(unique_id, agebin) %>% 
   dplyr::select(ward, settlement_type_new, ea_number, ea_numbers_new) %>% 
   summarise(count = n()) %>% 
-  filter(count>1)
+  filter(count > 1)
 
 # Checked
 # serial_nums <- duplicates$unique_id  
@@ -75,8 +78,6 @@ weight_adjusted_tpr <- Ibadan_data_malaria_data %>%
             total = n(), negative = total - positive,
             tpr = round(sum(malaria_test * overall_hh_weight, na.rm = T) / sum(overall_hh_weight, na.rm = T) * 100, 3),
             compliment = 100 - tpr)
-
-
 
 
 new_data <- weight_adjusted_tpr %>% 
