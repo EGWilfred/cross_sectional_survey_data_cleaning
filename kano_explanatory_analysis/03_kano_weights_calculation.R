@@ -12,6 +12,12 @@ kano_hh_listed_01 <- read_excel(file.path(dropbox, "Kano_HH_Listing_2023-12-01 (
 kano_hh_listed <- rbind(kano_hh_listed_00, kano_hh_listed_01)
 
 
+
+# View(kano_hh_listed %>% 
+#        group_by(`EA Serial Number`) %>% 
+#        transmute(Ward, total = n()))
+
+
 # hh_listed <- kano_hh_listed %>% 
 #   dplyr::select(`Enumeration Area`, `EA Serial Number`, `EA Serial Number`, 
 #                 Ward) %>%
@@ -57,35 +63,54 @@ listed_households <- kano_hh_listed %>%
 
 
 selected_household <- kano_hh_sampled %>% 
-  mutate(
+  mutate(ea_name_new  = paste0(ward, "/", easerialnumber),
     prob_selected_eas_settlement = case_when(
-      ward == "Zango" & settlement == "informal" ~ 1,
-      ward == "Zango" & settlement == "slum" ~ 1,
-      ward == "Zango" & settlement == "formal" ~ 1,
+      ward == "Zango" & settlement == "Informal" ~ 1,
+      ward == "Zango" & settlement == "Slum" ~ 1,
+      ward == "Zango" & settlement == "Formal" ~ 1,
       
-      ward == "Gobirawa" & settlement == "formal" ~ 3/14,
-      ward == "Gobirawa" & settlement == "informal" ~ 37/228,
-      ward == "Gobirawa" & settlement == "slum" ~ 0,
+      ward == "Gobirawa" & settlement == "Formal" ~ 3/14,
+      ward == "Gobirawa" & settlement == "Informal" ~ 37/228,
+      ward == "Gobirawa" & settlement == "Slum" ~ 0,
       
-      ward == "Giginyu" & settlement == "formal" ~ 1,
-      ward == "Giginyu" & settlement == "informal" ~ 1,
-      ward == "Giginyu" & settlement == "slum" ~ 0,
+      ward == "Giginyu" & settlement == "Formal" ~ 1,
+      ward == "Giginyu" & settlement == "Informal" ~ 1,
+      ward == "Giginyu" & settlement == "Slum" ~ 0,
       
-      ward == "Fagge D2" & settlement == "formal" ~ 1,
-      ward == "Fagge D2" & settlement == "informal" ~ 1,
-      ward == "Fagge D2" & settlement == "slum" ~ 0,
+      ward == "Fagge D2" & settlement == "Formal" ~ 1,
+      ward == "Fagge D2" & settlement == "Informal" ~ 1,
+      ward == "Fagge D2" & settlement == "Slum" ~ 0,
       
-      ward == "Dorayi" & settlement == "formal" ~ 1,
-      ward == "Dorayi" & settlement == "informal" ~ 27/29,
-      ward == "Dorayi" & settlement == "slum" ~ 0
+      ward == "Dorayi" & settlement == "Formal" ~ 1,
+      ward == "Dorayi" & settlement == "Informal" ~ 27/29,
+      ward == "Dorayi" & settlement == "Slum" ~ 0,
       
-      #TRUE ~ Value  # If none of the conditions match, keep the original 'Value'
+      TRUE ~ NA_real_  # If none of the conditions match, keep the original 'Value'
     )
-  ) %>% 
-  group_by(enumerationarea, easerialnumber, ward, serialnumberofstructure) %>% 
+  ) %>%
+  group_by(enumerationarea, easerialnumber, ward, ea_name_new ,serialnumberofstructure) %>% 
   dplyr::distinct() %>% 
-  mutate(total_hh_selected_structure = n()) %>% 
+  mutate(total_hh_selected_structure = n(), ) %>% 
   ungroup()
+
+
+all_eas <- selected_household %>% 
+  dplyr::select(ward, enumerationarea, easerialnumber, settlement) %>% 
+  group_by(ward, enumerationarea, easerialnumber, settlement) %>% 
+  summarise(total = n(), 
+            ea_name = paste0(enumerationarea[1], "/", easerialnumber[1]))
+  
+# write.csv(all_eas,
+#           file.path(cleaned_data, metropolis_name,
+#                     "duplicated_data",
+#                     "all_eas_96.csv"))
+
+# check <- read.csv(file.path(cleaned_data, metropolis_name,
+#                     "duplicated_data",
+#                     "check.csv"))
+          
+
+# View(all_eas)
 
 # correct up to this points
 
@@ -104,24 +129,47 @@ all_selected_hh <- inner_join(listed_households,
 
 
 weights_data <- all_selected_hh %>% 
-  dplyr::select(longitude, 
-                latitude, ward, index, ea_serial_number, hh_serial_number, 
-                structure_serial_number,
-                prob_selected_ward, prob_selected_eas_settlement,
+  mutate(enumeration_area = paste0(toupper(enumerationarea), "/", easerialnumber), 
+         enumeration_area = str_replace_all(enumeration_area, "[ ,]", "")) %>% 
+  inner_join(kano_hh_sampled_eanames) %>% 
+  dplyr::select(longitude, latitude, ward = ward.x, index,
+                enumeration_area, ea_names, ea_serial_number, hh_serial_number, 
+                structure_serial_number,prob_selected_ward, 
+                prob_selected_eas_settlement,
                 prob_selected_hh_structure)
 
 
-write.csv(weights_data, file.path(NuDir, "weights_data.csv"))
 
-write.csv(all_selected_hh, file.path(NuDir, "all_selected_hh.csv"))
+write.csv(weights_data, file.path(dropbox, "kano_weights_data.csv"))
 
-
-ea_names <- unique(ib_hh_sampled$enumeration_area)
-
-write.csv(ea_names, file.path(NuDir, "ea_names.csv"))
+write.csv(all_selected_hh, file.path(dropbox, "kano_all_selected_hh.csv"))
 
 
-ib_hh_sampled_eas <- ib_hh_sampled %>% 
-  dplyr::select(cluster_number, enumeration_area)
+
+
+
+kano_hh_sampled00 <- kano_hh_sampled %>% 
+  mutate(enumeration_area = paste0(toupper(enumerationarea), "/", easerialnumber), 
+         enumeration_area = str_replace_all(enumeration_area, "[ ,]", ""))
+# , 
+#          enumeration_area = str_replace_all(manipulate_enumaration_area, "[']", ""))
+
+ea_names <- unique(kano_hh_sampled00$enumeration_area)
+
+write.csv(ea_names, file.path(dropbox, "ea_names.csv"))
+
+corrected_EAS = read.csv("C:/Users/lml6626/Downloads/corrections_done (1).csv")
+
+kano_hh_sampled_eanames <- kano_hh_sampled00 %>% 
+  dplyr::select(easerialnumber, enumerationarea, enumeration_area) %>% 
+  inner_join(corrected_EAS, by = c("easerialnumber" = "cluster_number")) %>% 
+  distinct()
+
+
+
 
 write.csv(ib_hh_sampled_eas, file.path(NuDir, "ib_hh_sampled_eas.csv"))
+
+
+
+

@@ -47,7 +47,7 @@ Ibadan_data_malaria_data <-  Ibadan_data_malaria_data %>%
   ungroup() 
 
 
-# write.csv(Ibadan_data_malaria_data, file.path(cleaned_data_path, metropolis_name,"spatial_data_analysis.csv")) 
+ # write.csv(Ibadan_data_malaria_data, file.path(cleaned_data_path, metropolis_name,"spatial_data_analysis.csv")) 
 
 
 duplicates <- Ibadan_data_malaria_data %>% 
@@ -136,6 +136,20 @@ EA_weight_adjusted_tpr <- Ibadan_data_malaria_data %>%
             compliment = 100 - tpr)
 
 
+less_than_5 = EA_weight_adjusted_tpr %>% 
+  mutate(target = ifelse(tpr < 5, "less than 5%", 
+                         "greater than 5%")) %>% 
+  group_by(target) %>% 
+  summarise(totals = sum(total))
+
+
+
+less_than_1 = EA_weight_adjusted_tpr %>% 
+  mutate(target = ifelse(tpr < 1, "less than 1%", 
+                         "greater than 1%")) %>% 
+  group_by(target) %>% 
+  summarise(totals = sum(total))
+
 
 
 # write.csv(EA_weight_adjusted_tpr, file.path(cleaned_data_path, metropolis_name,"EA_weight_adjusted_tpr.csv"), row.names = F)  
@@ -189,6 +203,11 @@ new_ward_data <- weight_adjusted_ward_tpr %>%
 
 
 names(new_ward_data) <- c("settlement_type", "Ward", "result", "value")
+
+
+
+less_than_5 = weight_adjusted_ward_tpr %>% 
+  filter(tpr < 5)
 
 
 

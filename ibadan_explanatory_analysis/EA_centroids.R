@@ -79,6 +79,9 @@ for (index in seq_along(split_data)){
 
 final_centroid_data <- data.table::rbindlist(centroids)
 
+write.csv(final_centroid_data, file.path(cleaned_data_path, metropolis_name,"Ibadan_centoids_data.csv"))
+
+
 
 newdata <- EA_weight_adjusted_tpr %>% 
   inner_join(final_centroid_data) %>% 
@@ -177,4 +180,29 @@ finally_than_twenty <- newdata %>%
   distinct()
 
 write.csv(finally_than_twenty, file.path(cleaned_data_path, metropolis_name,"EA_weight_adjusted_tpr_greater_than15.csv"))
+
+
+# prepare Merlin's data 
+
+centroids_ea <- read.csv(file.path(cleaned_data_path,  "/Ibadan/Ibadan_centoids_data.csv")) %>% 
+  dplyr::select(centroid_lon = longitude, centroid_lat = latitude, 
+                settlement_type_new, Ward, ea_numbers_new)
+
+
+all_hseholds <- read.csv(file.path(cleaned_data_path, metropolis_name,"centroid_data_lq.csv")) %>% 
+  inner_join(centroids_ea, by = c("Ward",
+                                  "settlement_type" = "settlement_type_new", 
+                                  "ea_names" = "ea_numbers_new")) %>% 
+  dplyr::select(longitude, 
+                latitude, 
+                hh_serial_number = serial_number, 
+                Ward, settlement_type,
+                ea_names, 
+                centroid_lon,
+                centroid_lat)
+
+
+write.csv(all_hseholds, file.path(cleaned_data_path, metropolis_name,"ibadan_all_hseholds_cordinates.csv"))
+
+
 

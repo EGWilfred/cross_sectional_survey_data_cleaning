@@ -1,28 +1,29 @@
 # Load required libraries
 if (!requireNamespace("sf", quietly = TRUE)) install.packages("sf")
 if (!requireNamespace("ggplot2", quietly = TRUE)) install.packages("ggplot2")
-library(sf)
-library(ggplot2)
-
-
-
+library(sf); library(ggplot2)
 
 # Generate example data
 set.seed(123)
-library(sf)
+
+
+
+
 
 # Manually defined larger polygon coordinates
 larger_polygon_coords <- matrix(c(
-  0.7, 0.7,  # Bottom left
-  2.3, 0.7,  # Bottom right
-  2.3, 2.3,  # Top right
-  0.7, 2.3,  # Top left
-  0.7, 0.7   # Closing the polygon back to the start
+  0.7, 0.7, 
+  2.3, 0.7,  
+  2.3, 2.3,  
+  0.7, 2.3,  
+  0.7, 0.7   
 ), ncol = 2, byrow = TRUE)
 
-# Create an sf polygon object for the larger polygon
+ 
+
+#  sf polygon 
 larger_polygon <- st_polygon(list(larger_polygon_coords))
-larger_polygon_sf <- st_sfc(larger_polygon, crs = 4326)  # Assign the same CRS as other data
+larger_polygon_sf <- st_sfc(larger_polygon, crs = 4326)  
 larger_polygon_sf <- st_sf(geometry = larger_polygon_sf)
 
 
@@ -33,12 +34,51 @@ data <- data.frame(
   group = factor(rep(1:5, each = 10))
 )
 
+
+Ibadan_shapefile <- sf::read_sf(shapefile) %>% 
+  dplyr::filter( WardName == "Agugu")
+
+data <- read.csv(file.path(cleaned_data_path, metropolis_name,"Ibadan_centoids_data.csv"))
+
+
+Ibadan_data_malaria_data <- read.csv(file.path(cleaned_data_path, metropolis_name,"spatial_data_analysis.csv")) %>% 
+  dplyr::select(ea_numbers_new, Ward, longitude, latitude) %>% 
+  distinct()
+
+write.csv(Ibadan_data_malaria_data, file.path(cleaned_data_path, metropolis_name,"coordinates_ibadan.csv")) 
+
+
+# Convert the data points to an sf object
+data_points_sf <- st_as_sf(Ibadan_data_malaria_data, coords = c("longitude", "latitude"), crs = 4326)
+
+# Calculate centroids for each ea_numbers_new
+centroids <- data_points_sf %>%
+  group_by(ea_numbers_new) %>%
+  summarise(geometry = st_centroid(st_union(geometry)))
+
+# Create a convex hull polygon around the data points
+polygons <- data_points_sf %>%
+  group_by(ea_numbers_new) %>%
+  summarise(geometry = st_convex_hull(st_union(geometry)))
+
+# Plot the results
+ggplot() +
+  geom_sf(data = Ibadan_shapefile, fill = "grey") +
+  # geom_sf(data = polygons,  alpha = 0.5) +
+  geom_sf(data = data_points_sf, color = "black", size = 2) +
+  ylim(c(7.371043, 7.391085))+xlim(c(3.916961, 3.93985)) +
+  labs(title = "Polygon Describing Data Points Area", fill = "EA Numbers") +
+  theme(legend.position = "none")
+
+# Save the convex hull polygon as a shapefile
+st_write(convex_hull, "path/to/convex_hull.shp")
+
 # Calculate centroids for each group
-centroid_data <- aggregate(cbind(x, y) ~ group, data = data, FUN = mean)
+centroid_data <- Ibadan_data_malaria_data
 
 # Function to calculate convex hull and convert to sf polygon
 create_hull_sf <- function(group_data) {
-  hull_indices <- chull(group_data$x, group_data$y)
+  hull_indices <- chull(group_data$longitude, group_data$latitude)
   hull_points <- group_data[hull_indices, , drop = FALSE]
   hull_points <- rbind(hull_points, hull_points[1, , drop = FALSE])  # Close the polygon
   pol <- st_polygon(list(as.matrix(hull_points[c("x", "y")])))
@@ -46,7 +86,8 @@ create_hull_sf <- function(group_data) {
 }
 
 # Apply function to each group
-polygons <- do.call(c, lapply(split(data, data$group), create_hull_sf))
+polygons <- do.call(c, lapply(split(Ibadan_data_malaria_data, Ibadan_data_malaria_data$ea_numbers_new), create_hull_sf))
+
 polygon_sf <- st_sf(
   geometry = st_sfc(polygons, crs = 4326),
   group = as.character(1:5)
@@ -58,7 +99,6 @@ centroids_sf <- st_as_sf(centroid_data, coords = c("x", "y"), crs = 4326)
 
 
 # Complete visualization with convex hulls, centroids, and data points
-library(ggplot2)
 
 # Assuming you have `data`, `polygon_sf`, and `centroids_sf` as previously created
 ggplot() +
