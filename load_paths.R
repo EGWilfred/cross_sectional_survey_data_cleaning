@@ -81,7 +81,7 @@ map_theme <- function(){
         plot.background = ggplot2::element_rect(fill = "white", colour = NA),
         plot.title = element_text(hjust = 0.5),
         legend.title.align=0.5,
-        legend.title=element_text(size=8, colour = 'black'),
-        legend.text =element_text(size = 8, colour = 'black'),
+        legend.title=element_text(size=18, colour = 'black'),
+        legend.text =element_text(size = 18, colour = 'black'),
         legend.key.height = unit(0.65, "cm"))
 }
